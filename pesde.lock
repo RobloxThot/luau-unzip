@@ -2,24 +2,6 @@ name = "0x5eal/unzip"
 version = "0.1.0"
 target = "luau"
 
-[graph."jiwonz/pathfs"."0.1.0 lune"]
-direct = ["pathfs", { name = "jiwonz/pathfs", version = "^0.1.0", target = "lune" }, "standard"]
-resolved_ty = "standard"
-
-[graph."jiwonz/pathfs"."0.1.0 lune".target]
-environment = "lune"
-lib = "init.luau"
-
-[graph."jiwonz/pathfs"."0.1.0 lune".pkg_ref]
-ref_ty = "pesde"
-name = "jiwonz/pathfs"
-version = "0.1.0"
-index_url = "https://github.com/pesde-pkg/index"
-
-[graph."jiwonz/pathfs"."0.1.0 lune".pkg_ref.target]
-environment = "lune"
-lib = "init.luau"
-
 [graph."lukadev_0/result"."1.2.0 luau"]
 direct = ["result", { name = "lukadev_0/result", version = "^1.2.0" }, "standard"]
 resolved_ty = "standard"
