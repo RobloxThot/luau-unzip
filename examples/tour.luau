@@ -11,6 +11,8 @@ reader:walk(function(entry, depth)
 	print(prefix .. entry.name .. suffix)
 end)
 
+-- FIXME: Duplicates in directory listings when using `zip -r`
+
 print("\nContents of `/`:")
 local assets = reader:listDirectory("/")
 for _, entry in assets do
