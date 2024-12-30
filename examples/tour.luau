@@ -1,5 +1,5 @@
 local fs = require("@lune/fs")
-local zip = require("./lib")
+local zip = require("../lib")
 
 local file = fs.readFile("test.zip")
 local reader = zip.load(buffer.fromstring(file))
@@ -11,16 +11,14 @@ reader:walk(function(entry, depth)
     print(prefix .. entry.name .. suffix)
 end)
 
-print("\nContents of /lib/:")
-local assets = reader:listDirectory("/lib/")
-for _, entry in ipairs(assets) do
-    print(entry.name, entry.isDirectory and "DIR" or entry.size)
-end
-
-local configEntry = reader:findEntry("config.json")
-if configEntry then
-    local content = reader:extract(configEntry)
-    print("\nConfig file size:", buffer.len(content))
+print("\nContents of `/`:")
+local assets = reader:listDirectory("/")
+for _, entry in assets do
+    print(entry.name, if entry.isDirectory then "DIR" else entry.size)
+    if not entry.isDirectory then
+        local extracted = reader:extract(entry, { isString = true })
+        print("Content:", extracted)
+    end
 end
 
 -- Get archive statistics

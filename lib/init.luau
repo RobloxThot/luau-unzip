@@ -1,3 +1,6 @@
+local inflate = require("./inflate")
+local crc32 = require("./crc")
+
 -- Little endian constant signatures used in the ZIP file format
 local SIGNATURES = table.freeze({
 	-- Marks the beginning of each file in the ZIP
@@ -8,7 +11,38 @@ local SIGNATURES = table.freeze({
 	END_OF_CENTRAL_DIR = 0x06054b50,
 })
 
--- TODO: ERROR HANDLING!!
+type CrcValidationOptions = {
+	skip: boolean,
+	expected: number,
+}
+
+local function validateCrc(decompressed: buffer, validation: CrcValidationOptions)
+	-- Unless skipping validation is requested, we verify the checksum
+	if validation.skip then
+		local computed = crc32(decompressed)
+		assert(
+			validation.expected == computed,
+			`Validation failed; CRC checksum does not match: {string.format("%x", computed)} ~= {string.format(
+				"%x",
+				computed
+			)} (expected ~= got)`
+		)
+	end
+end
+
+local DECOMPRESSION_ROUTINES: { [number]: (buffer, validation: CrcValidationOptions) -> buffer } = table.freeze({
+	[0x00] = function(buf, validation)
+		validateCrc(buf, validation)
+		return buf
+	end,
+	[0x08] = function(buf, validation)
+		local decompressed = inflate(buf)
+		validateCrc(decompressed, validation)
+		return decompressed
+	end,
+})
+
+-- TODO: ERROR HANDLING!
 
 local ZipEntry = {}
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
@@ -140,75 +174,82 @@ end
 
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
 	for _, entry in self.entries do
-        local parts = {}
-        -- Split entry path into individual components
-        -- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
-        for part in string.gmatch(entry.name, "([^/]+)/?") do
-            table.insert(parts, part)
-        end
+		local parts = {}
+		-- Split entry path into individual components
+		-- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
+		for part in string.gmatch(entry.name, "([^/]+)/?") do
+			table.insert(parts, part)
+		end
 
-        -- Start from root directory
-        local current = self.root
-        local path = ""
+		-- Start from root directory
+		local current = self.root
+		local path = ""
 
-        -- Process each path component
-        for i, part in parts do
-            path ..= part
-            if i < #parts then
-                -- Create missing directory entries for intermediate paths
-                if not self.directories[path] then
-                    local dir = ZipEntry.new(path, 0, 0, entry.timestamp, 0)
-                    dir.isDirectory = true
-                    dir.parent = current
+		-- Process each path component
+		for i, part in parts do
+			path ..= part
+			if i < #parts then
+				-- Create missing directory entries for intermediate paths
+				if not self.directories[path] then
+					local dir = ZipEntry.new(path, 0, 0, entry.timestamp, 0)
+					dir.isDirectory = true
+					dir.parent = current
 
-                    -- Track directory in both lookup table and parent's children
-                    self.directories[path] = dir
-                    table.insert(current.children, dir)
-                end
+					-- Track directory in both lookup table and parent's children
+					self.directories[path] = dir
+					table.insert(current.children, dir)
+				end
 
-                -- Move deeper into the tree
-                current = self.directories[path]
-                continue
-            end
+				-- Move deeper into the tree
+				current = self.directories[path]
+				continue
+			end
 
-            -- Link file entry to its parent directory
-            entry.parent = current
-            table.insert(current.children, entry)
-        end
-    end	
+			-- Link file entry to its parent directory
+			entry.parent = current
+			table.insert(current.children, entry)
+		end
+	end
 end
 
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry
-    if path == "/" then
-		-- If the root directory's entry was requested we do not 
+	if path == "/" then
+		-- If the root directory's entry was requested we do not
 		-- need to do any additional work
 		return self.root
-    end
+	end
 
-    -- Normalize path by removing leading and trailing slashes
-    -- This ensures consistent lookup regardless of input format
-    -- e.g., "/folder/file.txt/" -> "folder/file.txt"
-    path = string.gsub(path, "^/", ""):gsub("/$", "")
+	-- Normalize path by removing leading and trailing slashes
+	-- This ensures consistent lookup regardless of input format
+	-- e.g., "/folder/file.txt/" -> "folder/file.txt"
+	path = string.gsub(path, "^/", ""):gsub("/$", "")
 
-    -- First check regular files and explicit directories
-    for _, entry in self.entries do
-        -- Compare normalized paths
-        if string.gsub(entry.name, "/$", "") == path then
-            return entry
-        end
-    end
+	-- First check regular files and explicit directories
+	for _, entry in self.entries do
+		-- Compare normalized paths
+		if string.gsub(entry.name, "/$", "") == path then
+			return entry
+		end
+	end
 
-    -- If not found, check virtual directory entries
-    -- These are directories that were created implicitly
-    return self.directories[path]
+	-- If not found, check virtual directory entries
+	-- These are directories that were created implicitly
+	return self.directories[path]
 end
 
-
-function ZipReader.extract(self: ZipReader, entry: ZipEntry): buffer
+type ExtractionOptions = {
+	decompress: boolean?,
+	isString: boolean?,
+	skipValidation: boolean?,
+}
+function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: ExtractionOptions?): buffer | string
 	-- Local File Header format:
 	-- Offset  Bytes  Description
 	-- 0       4      Local file header signature
 	-- 8       2      Compression method (8 = DEFLATE)
+	-- 14      4      CRC32 checksume
+	-- 18      4      Compressed size
+	-- 22      4      Uncompressed size
 	-- 26      2      File name length (n)
 	-- 28      2      Extra field length (m)
 	-- 30      n      File name
@@ -219,44 +260,78 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry): buffer
 		error("Cannot extract directory")
 	end
 
+	local defaultOptions: ExtractionOptions = {
+		decompress = true,
+		isString = false,
+		skipValidation = false,
+	}
+
+	-- TODO: Use a `Partial` type function for this in the future! 
+	local optionsOrDefault: {
+		decompress: boolean,
+		isString: boolean,
+		skipValidation: boolean
+	} = if options then setmetatable(options, { __index = defaultOptions }) :: any else defaultOptions
+
 	local pos = entry.offset
 	if buffer.readu32(self.data, pos) ~= SIGNATURES.LOCAL_FILE then
 		error("Invalid local file header")
 	end
 
+	local crcChecksum = buffer.readu32(self.data, pos + 14)
+	local compressedSize = buffer.readu32(self.data, pos + 18)
+	local uncompressedSize = buffer.readu32(self.data, pos + 22)
 	local nameLength = buffer.readu16(self.data, pos + 26)
 	local extraLength = buffer.readu16(self.data, pos + 28)
 
 	pos = pos + 30 + nameLength + extraLength
 
-	local content = buffer.create(entry.size)
-	buffer.copy(content, 0, self.data, pos, entry.size)
+	local content = buffer.create(compressedSize)
+	buffer.copy(content, 0, self.data, pos, compressedSize)
 
-	-- TODO: decompress data! `buffer.readu16(self.data, entry.offset + 8)`
-	-- will give the compression method, where method id 8 corresponds to
-	-- deflate
+	if optionsOrDefault.decompress then
+		local compressionMethod = buffer.readu16(self.data, entry.offset + 8)
+		local decompress = DECOMPRESSION_ROUTINES[compressionMethod]
+		if decompress == nil then
+			error(`Unsupported compression, ID: {compressionMethod}`)
+		end
 
-	return content
+		content = decompress(content, {
+			expected = crcChecksum,
+			skip = optionsOrDefault.skipValidation,
+		})
+
+		-- Unless skipping validation is requested, we make sure the uncompressed size matches
+		assert(
+			optionsOrDefault.skipValidation or uncompressedSize == buffer.len(content),
+			"Validation failed; uncompressed size does not match"
+		)
+	end
+
+	return if optionsOrDefault.isString then buffer.tostring(content) else content
 end
 
-function ZipReader.extractDirectory(self: ZipReader, path: string): { [string]: buffer }
-    local files = {}
-    -- Normalize path by removing leading slash for consistent prefix matching
-    path = string.gsub(path, "^/", "")
+function ZipReader.extractDirectory(
+	self: ZipReader,
+	path: string,
+	options: ExtractionOptions
+): { [string]: buffer } | { [string]: string }
+	local files: { [string]: buffer } | { [string]: string } = {}
+	-- Normalize path by removing leading slash for consistent prefix matching
+	path = string.gsub(path, "^/", "")
 
-    -- Iterate through all entries to find files within target directory
-    for _, entry in self.entries do
-        -- Check if entry is a file (not directory) and its path starts with target directory
-        if not entry.isDirectory and string.sub(entry.name, 1, #path) == path then
-            -- Store extracted content mapped to full path
-            files[entry.name] = self:extract(entry)
-        end
-    end
+	-- Iterate through all entries to find files within target directory
+	for _, entry in self.entries do
+		-- Check if entry is a file (not directory) and its path starts with target directory
+		if not entry.isDirectory and string.sub(entry.name, 1, #path) == path then
+			-- Store extracted content mapped to full path
+			files[entry.name] = self:extract(entry, options)
+		end
+	end
 
-    -- Return a map of file to contents
-    return files
+	-- Return a map of file to contents
+	return files
 end
-
 
 function ZipReader.listDirectory(self: ZipReader, path: string): { ZipEntry }
 	-- Locate the entry with the path
