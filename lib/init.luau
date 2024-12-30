@@ -127,7 +127,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		if buffer.readu32(self.data, pos) == SIGNATURES.END_OF_CENTRAL_DIR then
 			break
 		end
-		pos = pos - 1
+		pos -= 1
 	end
 
 	-- Central Directory offset is stored 16 bytes into the EoCD record
@@ -373,12 +373,12 @@ function ZipReader.getStats(self: ZipReader): ZipStatistics
 	-- Iterate through the entries, updating stats
 	for _, entry in self.entries do
 		if entry.isDirectory then
-			stats.dirCount = stats.dirCount + 1
+			stats.dirCount += 1
 			continue
 		end
 
-		stats.fileCount = stats.fileCount + 1
-		stats.totalSize = stats.totalSize + entry.size
+		stats.fileCount += 1
+		stats.totalSize += entry.size
 	end
 
 	return stats
