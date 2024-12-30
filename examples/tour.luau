@@ -16,10 +16,10 @@ end)
 print("\nContents of `/`:")
 local assets = reader:listDirectory("/")
 for _, entry in assets do
-	print(entry.name, if entry.isDirectory then "DIR" else entry.size)
+	print("  ->", entry.name, if entry.isDirectory then "DIR" else entry.size)
 	if not entry.isDirectory then
 		local extracted = reader:extract(entry, { isString = true })
-		print("Content:", extracted)
+		print("  -> Content:", extracted)
 	end
 end
 
