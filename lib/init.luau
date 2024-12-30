@@ -5,6 +5,8 @@ local crc32 = require("./crc")
 local SIGNATURES = table.freeze({
 	-- Marks the beginning of each file in the ZIP
 	LOCAL_FILE = 0x04034b50,
+	-- Marks the start of an data descriptor
+	DATA_DESCRIPTOR = 0x08074b50,
 	-- Marks entries in the central directory
 	CENTRAL_DIR = 0x02014b50,
 	-- Marks the end of the central directory
@@ -31,10 +33,13 @@ local function validateCrc(decompressed: buffer, validation: CrcValidationOption
 end
 
 local DECOMPRESSION_ROUTINES: { [number]: (buffer, validation: CrcValidationOptions) -> buffer } = table.freeze({
+	-- `STORE` decompression method - No compression
 	[0x00] = function(buf, validation)
 		validateCrc(buf, validation)
 		return buf
 	end,
+
+	-- `DEFLATE` decompression method - Compressed raw deflate chunks
 	[0x08] = function(buf, validation)
 		local decompressed = inflate(buf)
 		validateCrc(decompressed, validation)
@@ -240,14 +245,16 @@ end
 type ExtractionOptions = {
 	decompress: boolean?,
 	isString: boolean?,
-	skipValidation: boolean?,
+	skipCrcValidation: boolean?,
+	skipSizeValidation: boolean?,
 }
 function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: ExtractionOptions?): buffer | string
 	-- Local File Header format:
 	-- Offset  Bytes  Description
 	-- 0       4      Local file header signature
+	-- 6       2      General purpose bitflags
 	-- 8       2      Compression method (8 = DEFLATE)
-	-- 14      4      CRC32 checksume
+	-- 14      4      CRC32 checksum
 	-- 18      4      Compressed size
 	-- 22      4      Uncompressed size
 	-- 26      2      File name length (n)
@@ -270,7 +277,8 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	local optionsOrDefault: {
 		decompress: boolean,
 		isString: boolean,
-		skipValidation: boolean,
+		skipCrcValidation: boolean,
+		skipSizeValidation: boolean,
 	} = if options
 		then setmetatable(options, { __index = defaultOptions }) :: any
 		else defaultOptions
@@ -280,6 +288,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 		error("Invalid local file header")
 	end
 
+	local bitflags = buffer.readu16(self.data, pos + 6)
 	local crcChecksum = buffer.readu32(self.data, pos + 14)
 	local compressedSize = buffer.readu32(self.data, pos + 18)
 	local uncompressedSize = buffer.readu32(self.data, pos + 22)
@@ -287,6 +296,47 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	local extraLength = buffer.readu16(self.data, pos + 28)
 
 	pos = pos + 30 + nameLength + extraLength
+
+	if bit32.band(bitflags, 0x08) then
+		-- The bit at offset 3 was set, meaning we did not have the file sizes
+		-- and CRC checksum at the time of the creation of the ZIP. Instead, they
+		-- were appended after the compressed data chunks in a data descriptor
+
+		-- Data Descriptor format:
+		-- Offset   Bytes   Description
+		-- 0        0 or 4  0x08074b50 (optional signature)
+		-- 0 or 4   4       CRC32 checksum
+		-- 4 or 8   4       Compressed size
+		-- 8 or 12  4       Uncompressed size
+
+		-- Start at the compressed data
+		local descriptorPos = pos
+		while true do
+			-- Try reading a u32 starting from current offset
+			local leading = buffer.readu32(self.data, descriptorPos)
+
+			if leading == SIGNATURES.DATA_DESCRIPTOR then
+				-- If we find a data descriptor signature, that must mean
+				-- the current offset points is the start of the descriptor
+				break
+			end
+
+			if leading == entry.crc then
+				-- If we find our file's CRC checksum, that means the data
+				-- descriptor signature was omitted, so our chunk starts 4
+				-- bytes before
+				descriptorPos -= 4
+				break
+			end
+
+			-- Skip to the next byte
+			descriptorPos += 1
+		end
+
+		crcChecksum = buffer.readu32(self.data, descriptorPos + 4)
+		compressedSize = buffer.readu32(self.data, descriptorPos + 8)
+		uncompressedSize = buffer.readu32(self.data, descriptorPos + 12)
+	end
 
 	local content = buffer.create(compressedSize)
 	buffer.copy(content, 0, self.data, pos, compressedSize)
@@ -300,12 +350,12 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 		content = decompress(content, {
 			expected = crcChecksum,
-			skip = optionsOrDefault.skipValidation,
+			skip = optionsOrDefault.skipCrcValidation,
 		})
 
 		-- Unless skipping validation is requested, we make sure the uncompressed size matches
 		assert(
-			optionsOrDefault.skipValidation or uncompressedSize == buffer.len(content),
+			optionsOrDefault.skipSizeValidation or uncompressedSize == buffer.len(content),
 			"Validation failed; uncompressed size does not match"
 		)
 	end

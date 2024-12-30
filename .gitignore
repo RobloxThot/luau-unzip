@@ -1,2 +1,3 @@
-test.zip
+*.zip
+*.hexproj
 *_packages/
