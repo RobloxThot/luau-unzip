@@ -26,8 +26,8 @@ export type DataInner = {
 
 	dest: buffer,
 	destLen: number,
-	
-    ltree: Tree,
+
+	ltree: Tree,
 	dtree: Tree,
 }
 

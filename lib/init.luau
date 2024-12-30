@@ -266,12 +266,14 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 		skipValidation = false,
 	}
 
-	-- TODO: Use a `Partial` type function for this in the future! 
+	-- TODO: Use a `Partial` type function for this in the future!
 	local optionsOrDefault: {
 		decompress: boolean,
 		isString: boolean,
-		skipValidation: boolean
-	} = if options then setmetatable(options, { __index = defaultOptions }) :: any else defaultOptions
+		skipValidation: boolean,
+	} = if options
+		then setmetatable(options, { __index = defaultOptions }) :: any
+		else defaultOptions
 
 	local pos = entry.offset
 	if buffer.readu32(self.data, pos) ~= SIGNATURES.LOCAL_FILE then
