@@ -167,8 +167,6 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local offset = buffer.readu32(self.data, pos + 42)
 		local name = buffer.readstring(self.data, pos + 46, nameLength)
 
-		print("got name:", name)
-
 		local entry = ZipEntry.new(name, size, offset, timestamp, crc)
 		table.insert(self.entries, entry)
 
