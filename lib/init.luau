@@ -298,7 +298,6 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	pos = pos + 30 + nameLength + extraLength
 
 	if bit32.band(bitflags, 0x08) ~= 0 then
-		print("Unknown sizes, trying to find data descriptor")
 		-- The bit at offset 3 was set, meaning we did not have the file sizes
 		-- and CRC checksum at the time of the creation of the ZIP. Instead, they
 		-- were appended after the compressed data chunks in a data descriptor
@@ -339,9 +338,6 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 		uncompressedSize = buffer.readu32(self.data, descriptorPos + 12)
 	end
 
-	-- print("Compressed:", compressedSize)
-	-- FIXME: while trying to extract contents of ZipTestData/refzipfiles/normal.zip,
-	-- the compressed size is TOO LARGE -- 3865074944 -- but zipinfo tells me otherwise
 	local content = buffer.create(compressedSize)
 	buffer.copy(content, 0, self.data, pos, compressedSize)
 
