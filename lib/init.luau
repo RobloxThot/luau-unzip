@@ -165,10 +165,9 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local crc = buffer.readu32(self.data, pos + 16)
 		local size = buffer.readu32(self.data, pos + 24)
 		local offset = buffer.readu32(self.data, pos + 42)
+		local name = buffer.readstring(self.data, pos + 46, nameLength)
 
-		local nameBuffer = buffer.create(nameLength)
-		buffer.copy(nameBuffer, 0, self.data, pos + 46, nameLength)
-		local name = buffer.tostring(nameBuffer)
+		print("got name:", name)
 
 		local entry = ZipEntry.new(name, size, offset, timestamp, crc)
 		table.insert(self.entries, entry)
@@ -178,43 +177,62 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 end
 
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
-	for _, entry in self.entries do
-		local parts = {}
-		-- Split entry path into individual components
-		-- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
-		for part in string.gmatch(entry.name, "([^/]+)/?") do
-			table.insert(parts, part)
-		end
+    -- Sort entries to process directories first; I could either handle
+	-- directories and files in separate passes over the entries, or sort
+	-- the entries so I handled the directories first -- I decided to do
+	-- the latter
+    table.sort(self.entries, function(a, b)
+        if a.isDirectory ~= b.isDirectory then
+            return a.isDirectory
+        end
+        return a.name < b.name
+    end)
 
-		-- Start from root directory
-		local current = self.root
-		local path = ""
+    for _, entry in self.entries do
+        local parts = {}
+        -- Split entry path into individual components
+        -- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
+        for part in string.gmatch(entry.name, "([^/]+)/?") do
+            table.insert(parts, part)
+        end
 
-		-- Process each path component
-		for i, part in parts do
-			path ..= part
-			if i < #parts then
-				-- Create missing directory entries for intermediate paths
-				if not self.directories[path] then
-					local dir = ZipEntry.new(path, 0, 0, entry.timestamp, 0)
-					dir.isDirectory = true
-					dir.parent = current
+        -- Start from root directory
+        local current = self.root
+        local path = ""
 
-					-- Track directory in both lookup table and parent's children
-					self.directories[path] = dir
-					table.insert(current.children, dir)
-				end
+        -- Process each path component
+        for i, part in parts do
+            path ..= part
 
-				-- Move deeper into the tree
-				current = self.directories[path]
-				continue
-			end
+            if i < #parts or entry.isDirectory then
+                -- Create missing directory entries for intermediate paths
+                if not self.directories[path] then
+                    if entry.isDirectory and i == #parts then
+                        -- Existing directory entry, reuse it
+                        self.directories[path] = entry
+					else
+						-- Create new directory entry for intermediate paths or undefined
+						-- parent directories in the ZIP
+                        local dir = ZipEntry.new(path .. "/", 0, 0, entry.timestamp, 0)
+                        dir.isDirectory = true
+                        dir.parent = current
+                        self.directories[path] = dir
+                    end
 
-			-- Link file entry to its parent directory
-			entry.parent = current
-			table.insert(current.children, entry)
-		end
-	end
+                    -- Track directory in both lookup table and parent's children
+                    table.insert(current.children, self.directories[path])
+                end
+
+                -- Move deeper into the tree
+                current = self.directories[path]
+                continue
+            end
+
+            -- Link file entry to its parent directory
+            entry.parent = current
+            table.insert(current.children, entry)
+        end
+    end
 end
 
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry
