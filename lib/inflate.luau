@@ -344,7 +344,10 @@ end
 
 --- Main decompression function that processes DEFLATE compressed data
 local function uncompress(source: buffer): buffer
-    local dest = buffer.create(buffer.len(source) * 4)
+	-- FIXME: This is a temporary solution to avoid a buffer overflow
+	-- We likely want some type of reflection with the zip metadata to 
+	-- have a definitive buffer size
+    local dest = buffer.create(buffer.len(source) * 7)
     local d = Data.new(source, dest)
 
     repeat
