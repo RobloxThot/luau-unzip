@@ -3,7 +3,7 @@ local Tree = {}
 export type Tree = typeof(setmetatable({} :: TreeInner, { __index = Tree }))
 type TreeInner = {
     table: { number }, -- len: 16
-    trans: { number }, -- len: 288
+    trans: { number }, -- len: 288 (🏳️‍⚧️❓)
 }
 
 function Tree.new(): Tree
