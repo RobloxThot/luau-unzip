@@ -32,20 +32,23 @@ local function validateCrc(decompressed: buffer, validation: CrcValidationOption
 	end
 end
 
-local DECOMPRESSION_ROUTINES: { [number]: (buffer, validation: CrcValidationOptions) -> buffer } = table.freeze({
-	-- `STORE` decompression method - No compression
-	[0x00] = function(buf, validation)
-		validateCrc(buf, validation)
-		return buf
-	end,
+local DECOMPRESSION_ROUTINES: { [number]: (buffer, number, CrcValidationOptions) -> buffer } =
+	table.freeze({
+		-- `STORE` decompression method - No compression
+		[0x00] = function(buf, _, validation)
+			validateCrc(buf, validation)
+			return buf
+		end,
 
-	-- `DEFLATE` decompression method - Compressed raw deflate chunks
-	[0x08] = function(buf, validation)
-		local decompressed = inflate(buf)
-		validateCrc(decompressed, validation)
-		return decompressed
-	end,
-})
+		-- `DEFLATE` decompression method - Compressed raw deflate chunks
+		[0x08] = function(buf, uncompressedSize, validation)
+			-- FIXME: Why is uncompressedSize not getting inferred correctly although it
+			-- is typed?
+			local decompressed = inflate(buf, uncompressedSize :: any)
+			validateCrc(decompressed, validation)
+			return decompressed
+		end,
+	})
 
 -- TODO: ERROR HANDLING!
 
@@ -175,62 +178,62 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 end
 
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
-    -- Sort entries to process directories first; I could either handle
+	-- Sort entries to process directories first; I could either handle
 	-- directories and files in separate passes over the entries, or sort
 	-- the entries so I handled the directories first -- I decided to do
 	-- the latter
-    table.sort(self.entries, function(a, b)
-        if a.isDirectory ~= b.isDirectory then
-            return a.isDirectory
-        end
-        return a.name < b.name
-    end)
+	table.sort(self.entries, function(a, b)
+		if a.isDirectory ~= b.isDirectory then
+			return a.isDirectory
+		end
+		return a.name < b.name
+	end)
 
-    for _, entry in self.entries do
-        local parts = {}
-        -- Split entry path into individual components
-        -- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
-        for part in string.gmatch(entry.name, "([^/]+)/?") do
-            table.insert(parts, part)
-        end
+	for _, entry in self.entries do
+		local parts = {}
+		-- Split entry path into individual components
+		-- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
+		for part in string.gmatch(entry.name, "([^/]+)/?") do
+			table.insert(parts, part)
+		end
 
-        -- Start from root directory
-        local current = self.root
-        local path = ""
+		-- Start from root directory
+		local current = self.root
+		local path = ""
 
-        -- Process each path component
-        for i, part in parts do
-            path ..= part
+		-- Process each path component
+		for i, part in parts do
+			path ..= part
 
-            if i < #parts or entry.isDirectory then
-                -- Create missing directory entries for intermediate paths
-                if not self.directories[path] then
-                    if entry.isDirectory and i == #parts then
-                        -- Existing directory entry, reuse it
-                        self.directories[path] = entry
+			if i < #parts or entry.isDirectory then
+				-- Create missing directory entries for intermediate paths
+				if not self.directories[path] then
+					if entry.isDirectory and i == #parts then
+						-- Existing directory entry, reuse it
+						self.directories[path] = entry
 					else
 						-- Create new directory entry for intermediate paths or undefined
 						-- parent directories in the ZIP
-                        local dir = ZipEntry.new(path .. "/", 0, 0, entry.timestamp, 0)
-                        dir.isDirectory = true
-                        dir.parent = current
-                        self.directories[path] = dir
-                    end
+						local dir = ZipEntry.new(path .. "/", 0, 0, entry.timestamp, 0)
+						dir.isDirectory = true
+						dir.parent = current
+						self.directories[path] = dir
+					end
 
-                    -- Track directory in both lookup table and parent's children
-                    table.insert(current.children, self.directories[path])
-                end
+					-- Track directory in both lookup table and parent's children
+					table.insert(current.children, self.directories[path])
+				end
 
-                -- Move deeper into the tree
-                current = self.directories[path]
-                continue
-            end
+				-- Move deeper into the tree
+				current = self.directories[path]
+				continue
+			end
 
-            -- Link file entry to its parent directory
-            entry.parent = current
-            table.insert(current.children, entry)
-        end
-    end
+			-- Link file entry to its parent directory
+			entry.parent = current
+			table.insert(current.children, entry)
+		end
+	end
 end
 
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry
@@ -364,7 +367,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 			error(`Unsupported compression, ID: {compressionMethod}`)
 		end
 
-		content = decompress(content, {
+		content = decompress(content, uncompressedSize, {
 			expected = crcChecksum,
 			skip = optionsOrDefault.skipCrcValidation,
 		})
