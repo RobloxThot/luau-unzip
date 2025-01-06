@@ -2,6 +2,24 @@ name = "0x5eal/unzip"
 version = "0.1.0"
 target = "luau"
 
+[graph."itsfrank/frktest"."0.0.2 lune"]
+direct = ["frktest", { name = "itsfrank/frktest", version = "^0.0.2", target = "lune" }, "dev"]
+resolved_ty = "dev"
+
+[graph."itsfrank/frktest"."0.0.2 lune".target]
+environment = "lune"
+lib = "src/_pesde_init.luau"
+
+[graph."itsfrank/frktest"."0.0.2 lune".pkg_ref]
+ref_ty = "pesde"
+name = "itsfrank/frktest"
+version = "0.0.2"
+index_url = "https://github.com/pesde-pkg/index"
+
+[graph."itsfrank/frktest"."0.0.2 lune".pkg_ref.target]
+environment = "lune"
+lib = "src/_pesde_init.luau"
+
 [graph."jiwonz/dirs"."0.1.2 lune"]
 resolved_ty = "standard"
 
