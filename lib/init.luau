@@ -20,7 +20,7 @@ type CrcValidationOptions = {
 
 local function validateCrc(decompressed: buffer, validation: CrcValidationOptions)
 	-- Unless skipping validation is requested, we verify the checksum
-	if validation.skip then
+	if not validation.skip then
 		local computed = crc32(decompressed)
 		assert(
 			validation.expected == computed,
