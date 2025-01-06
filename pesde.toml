@@ -1,12 +1,20 @@
 name = "0x5eal/unzip"
-version = "0.1.0"
-description = "unzip implementation in pure Luau"
+version = "0.0.1-rc.1"
+description = "Unzip implementation in pure Luau"
 authors = ["Erica Marigold <hi@devcomp.xyz>"]
 repository = "https://github.com/0x5eal/luau-unzip"
 license = "MIT"
+includes = [
+	"README.md",
+	"LICENSE.md",
+	"pesde.toml",
+	"lib/**/*.luau",
+	"!tests/**",
+]
 
 [target]
 environment = "luau"
+lib = "lib/init.luau"
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
