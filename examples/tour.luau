@@ -2,14 +2,14 @@ local fs = require("@lune/fs")
 local stdio = require("@lune/stdio")
 local zip = require("../lib")
 
-local file = fs.readFile("test.zip")
+local file = fs.readFile("tests/data/files_and_dirs.zip")
 local reader = zip.load(buffer.fromstring(file))
 
 print("Directory structure:")
 reader:walk(function(entry, depth)
 	local prefix = string.rep("  ", depth)
 	local suffix = if not entry.isDirectory
-		then string.format(" (%d bytes), content: %s", entry.size, stdio.format(reader:extract(entry) :: string))
+		then string.format(" (%d bytes), content: %s", entry.size, reader:extract(entry, { isString = true }) :: string)
 		else ""
 	print(prefix .. entry.name .. suffix)
 end)
