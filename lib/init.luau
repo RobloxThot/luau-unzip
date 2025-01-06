@@ -33,28 +33,29 @@ local function validateCrc(decompressed: buffer, validation: CrcValidationOption
 end
 
 export type CompressionMethod = "STORE" | "DEFLATE"
-local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, CrcValidationOptions) -> buffer } } = table.freeze({
-	-- `STORE` decompression method - No compression
-	[0x00] = {
-		name = "STORE" :: CompressionMethod,
-		decompress = function(buf, _, validation)
-			validateCrc(buf, validation)
-			return buf
-		end
-	},
+local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, CrcValidationOptions) -> buffer } } =
+	table.freeze({
+		-- `STORE` decompression method - No compression
+		[0x00] = {
+			name = "STORE" :: CompressionMethod,
+			decompress = function(buf, _, validation)
+				validateCrc(buf, validation)
+				return buf
+			end,
+		},
 
-	-- `DEFLATE` decompression method - Compressed raw deflate chunks
-	[0x08] = {
-		name = "DEFLATE" :: CompressionMethod,
-		decompress = function(buf, uncompressedSize, validation)
-			-- FIXME: Why is uncompressedSize not getting inferred correctly although it
-			-- is typed?
-			local decompressed = inflate(buf, uncompressedSize :: any)
-			validateCrc(decompressed, validation)
-			return decompressed
-		end
-	},
-})
+		-- `DEFLATE` decompression method - Compressed raw deflate chunks
+		[0x08] = {
+			name = "DEFLATE" :: CompressionMethod,
+			decompress = function(buf, uncompressedSize, validation)
+				-- FIXME: Why is uncompressedSize not getting inferred correctly although it
+				-- is typed?
+				local decompressed = inflate(buf, uncompressedSize :: any)
+				validateCrc(decompressed, validation)
+				return decompressed
+			end,
+		},
+	})
 
 -- TODO: ERROR HANDLING!
 
@@ -73,14 +74,21 @@ type ZipEntryInner = {
     children: { ZipEntry },    -- The children of the entry
 }
 
-function ZipEntry.new(name: string, size: number, offset: number, timestamp: number, method: CompressionMethod?, crc: number): ZipEntry
+function ZipEntry.new(
+	name: string,
+	size: number,
+	offset: number,
+	timestamp: number,
+	method: CompressionMethod?,
+	crc: number
+): ZipEntry
 	return setmetatable(
 		{
 			name = name,
 			size = size,
 			offset = offset,
 			timestamp = timestamp,
-			method  = method,
+			method = method,
 			crc = crc,
 			isDirectory = string.sub(name, -1) == "/",
 			parent = nil,
