@@ -1,5 +1,4 @@
 local fs = require("@lune/fs")
-local stdio = require("@lune/stdio")
 local zip = require("../lib")
 
 local file = fs.readFile("tests/data/files_and_dirs.zip")
@@ -17,7 +16,7 @@ end)
 print("\Children of `/`:")
 local assets = reader:listDirectory("/")
 for _, entry in assets do
-	print(`    {entry.name} - {if entry.isDirectory then "DIR" else "FILE"}`)
+	print(`    {entry.name} - {if entry.isDirectory then "DIR" else "FILE"} ({entry.method})`)
 end
 
 -- Get archive statistics

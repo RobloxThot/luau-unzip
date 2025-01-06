@@ -32,21 +32,28 @@ local function validateCrc(decompressed: buffer, validation: CrcValidationOption
 	end
 end
 
-local DECOMPRESSION_ROUTINES: { [number]: (buffer, number, CrcValidationOptions) -> buffer } = table.freeze({
+export type CompressionMethod = "STORE" | "DEFLATE"
+local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, CrcValidationOptions) -> buffer } } = table.freeze({
 	-- `STORE` decompression method - No compression
-	[0x00] = function(buf, _, validation)
-		validateCrc(buf, validation)
-		return buf
-	end,
+	[0x00] = {
+		name = "STORE" :: CompressionMethod,
+		decompress = function(buf, _, validation)
+			validateCrc(buf, validation)
+			return buf
+		end
+	},
 
 	-- `DEFLATE` decompression method - Compressed raw deflate chunks
-	[0x08] = function(buf, uncompressedSize, validation)
-		-- FIXME: Why is uncompressedSize not getting inferred correctly although it
-		-- is typed?
-		local decompressed = inflate(buf, uncompressedSize :: any)
-		validateCrc(decompressed, validation)
-		return decompressed
-	end,
+	[0x08] = {
+		name = "DEFLATE" :: CompressionMethod,
+		decompress = function(buf, uncompressedSize, validation)
+			-- FIXME: Why is uncompressedSize not getting inferred correctly although it
+			-- is typed?
+			local decompressed = inflate(buf, uncompressedSize :: any)
+			validateCrc(decompressed, validation)
+			return decompressed
+		end
+	},
 })
 
 -- TODO: ERROR HANDLING!
@@ -55,23 +62,25 @@ local ZipEntry = {}
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
 -- stylua: ignore
 type ZipEntryInner = {
-    name: string,           -- File path within ZIP, '/' suffix indicates directory
-    size: number,           -- Uncompressed size in bytes
-    offset: number,         -- Absolute position of local header in ZIP
-    timestamp: number,      -- MS-DOS format timestamp
-    crc: number,            -- CRC32 checksum of uncompressed data
-    isDirectory: boolean,   -- Whether the entry is a directory or not
-    parent: ZipEntry?,      -- The parent of the current entry, nil for root
-    children: { ZipEntry }, -- The children of the entry
+    name: string,              -- File path within ZIP, '/' suffix indicates directory
+    size: number,              -- Uncompressed size in bytes
+    offset: number,            -- Absolute position of local header in ZIP
+    timestamp: number,         -- MS-DOS format timestamp
+	method: CompressionMethod, -- Method used to compress the file
+    crc: number,               -- CRC32 checksum of uncompressed data
+    isDirectory: boolean,      -- Whether the entry is a directory or not
+    parent: ZipEntry?,         -- The parent of the current entry, nil for root
+    children: { ZipEntry },    -- The children of the entry
 }
 
-function ZipEntry.new(name: string, size: number, offset: number, timestamp: number, crc: number): ZipEntry
+function ZipEntry.new(name: string, size: number, offset: number, timestamp: number, method: CompressionMethod?, crc: number): ZipEntry
 	return setmetatable(
 		{
 			name = name,
 			size = size,
 			offset = offset,
 			timestamp = timestamp,
+			method  = method,
 			crc = crc,
 			isDirectory = string.sub(name, -1) == "/",
 			parent = nil,
@@ -104,7 +113,7 @@ type ZipReaderInner = {
 }
 
 function ZipReader.new(data): ZipReader
-	local root = ZipEntry.new("/", 0, 0, 0, 0)
+	local root = ZipEntry.new("/", 0, 0, 0, nil, 0)
 	root.isDirectory = true
 
 	local this = setmetatable(
@@ -150,6 +159,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- ------------------------------------------------
 		-- 0       4      Central directory entry signature
 		-- 8       2      General purpose bitflags
+		-- 10      2      Compression method (8 = DEFLATE)
 		-- 12      4      Last mod time/date
 		-- 28      2      File name length (n)
 		-- 30      2      Extra field length (m)
@@ -162,6 +172,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- 46+n+m  k      Comment
 
 		local _bitflags = buffer.readu16(self.data, pos + 8)
+		local compressionMethod = buffer.readu16(self.data, pos + 10)
 		local nameLength = buffer.readu16(self.data, pos + 28)
 		local extraLength = buffer.readu16(self.data, pos + 30)
 		local commentLength = buffer.readu16(self.data, pos + 32)
@@ -171,7 +182,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local offset = buffer.readu32(self.data, pos + 42)
 		local name = buffer.readstring(self.data, pos + 46, nameLength)
 
-		local entry = ZipEntry.new(name, size, offset, timestamp, crc)
+		local entry = ZipEntry.new(name, size, offset, timestamp, DECOMPRESSION_ROUTINES[compressionMethod].name, crc)
 		table.insert(self.entries, entry)
 
 		pos = pos + 46 + nameLength + extraLength + commentLength
@@ -215,7 +226,7 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 					else
 						-- Create new directory entry for intermediate paths or undefined
 						-- parent directories in the ZIP
-						local dir = ZipEntry.new(path .. "/", 0, 0, entry.timestamp, 0)
+						local dir = ZipEntry.new(path .. "/", 0, 0, entry.timestamp, nil, 0)
 						dir.isDirectory = true
 						dir.parent = current
 						self.directories[path] = dir
@@ -363,12 +374,12 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 	if optionsOrDefault.decompress then
 		local compressionMethod = buffer.readu16(self.data, entry.offset + 8)
-		local decompress = DECOMPRESSION_ROUTINES[compressionMethod]
-		if decompress == nil then
+		local algo = DECOMPRESSION_ROUTINES[compressionMethod]
+		if algo == nil then
 			error(`Unsupported compression, ID: {compressionMethod}`)
 		end
 
-		content = decompress(content, uncompressedSize, {
+		content = algo.decompress(content, uncompressedSize, {
 			expected = crcChecksum,
 			skip = optionsOrDefault.skipCrcValidation,
 		})
