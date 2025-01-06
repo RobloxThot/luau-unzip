@@ -1,5 +1,6 @@
 local CRC32_TABLE = table.create(256)
 
+-- TODO: Maybe compute this AoT as an optimization
 -- Initialize the lookup table and lock it in place
 for i = 0, 255 do
 	local crc = i
