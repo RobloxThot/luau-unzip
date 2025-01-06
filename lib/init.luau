@@ -32,23 +32,22 @@ local function validateCrc(decompressed: buffer, validation: CrcValidationOption
 	end
 end
 
-local DECOMPRESSION_ROUTINES: { [number]: (buffer, number, CrcValidationOptions) -> buffer } =
-	table.freeze({
-		-- `STORE` decompression method - No compression
-		[0x00] = function(buf, _, validation)
-			validateCrc(buf, validation)
-			return buf
-		end,
+local DECOMPRESSION_ROUTINES: { [number]: (buffer, number, CrcValidationOptions) -> buffer } = table.freeze({
+	-- `STORE` decompression method - No compression
+	[0x00] = function(buf, _, validation)
+		validateCrc(buf, validation)
+		return buf
+	end,
 
-		-- `DEFLATE` decompression method - Compressed raw deflate chunks
-		[0x08] = function(buf, uncompressedSize, validation)
-			-- FIXME: Why is uncompressedSize not getting inferred correctly although it
-			-- is typed?
-			local decompressed = inflate(buf, uncompressedSize :: any)
-			validateCrc(decompressed, validation)
-			return decompressed
-		end,
-	})
+	-- `DEFLATE` decompression method - Compressed raw deflate chunks
+	[0x08] = function(buf, uncompressedSize, validation)
+		-- FIXME: Why is uncompressedSize not getting inferred correctly although it
+		-- is typed?
+		local decompressed = inflate(buf, uncompressedSize :: any)
+		validateCrc(decompressed, validation)
+		return decompressed
+	end,
+})
 
 -- TODO: ERROR HANDLING!
 
@@ -150,10 +149,11 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- Offset  Bytes  Description
 		-- ------------------------------------------------
 		-- 0       4      Central directory entry signature
+		-- 8       2      General purpose bitflags
+		-- 12      4      Last mod time/date
 		-- 28      2      File name length (n)
 		-- 30      2      Extra field length (m)
 		-- 32      2      Comment length (k)
-		-- 12      4      Last mod time/date
 		-- 16      4      CRC-32
 		-- 24      4      Uncompressed size
 		-- 42      4      Local header offset
@@ -161,6 +161,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- 46+n    m      Extra field
 		-- 46+n+m  k      Comment
 
+		local _bitflags = buffer.readu16(self.data, pos + 8)
 		local nameLength = buffer.readu16(self.data, pos + 28)
 		local extraLength = buffer.readu16(self.data, pos + 30)
 		local commentLength = buffer.readu16(self.data, pos + 32)
@@ -236,7 +237,7 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 	end
 end
 
-function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry
+function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
 	if path == "/" then
 		-- If the root directory's entry was requested we do not
 		-- need to do any additional work
