@@ -94,24 +94,6 @@ index_url = "https://github.com/daimond113/pesde-index"
 environment = "lune"
 lib = "lib/init.luau"
 
-[graph."lukadev_0/result"."1.2.0 luau"]
-direct = ["result", { name = "lukadev_0/result", version = "^1.2.0" }, "standard"]
-resolved_ty = "standard"
-
-[graph."lukadev_0/result"."1.2.0 luau".target]
-environment = "luau"
-lib = "lib/init.luau"
-
-[graph."lukadev_0/result"."1.2.0 luau".pkg_ref]
-ref_ty = "pesde"
-name = "lukadev_0/result"
-version = "1.2.0"
-index_url = "https://github.com/pesde-pkg/index"
-
-[graph."lukadev_0/result"."1.2.0 luau".pkg_ref.target]
-environment = "luau"
-lib = "lib/init.luau"
-
 [graph."pesde/stylua"."2.0.2 lune"]
 direct = ["stylua", { name = "pesde/stylua", version = "^2.0.2", target = "lune" }, "dev"]
 resolved_ty = "dev"
