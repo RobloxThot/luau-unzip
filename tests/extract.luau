@@ -19,8 +19,6 @@ local FALLIBLES = {
 	"chinese.zip",
     "non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
 	"pandoc_soft_links.zip", -- FIXME: Soft links are not handled correctly
-	-- FIXME: Files with a misaligned comments are not correctly located
-	-- "misaligned_comment.zip",
 }
 
 return function(test: typeof(frktest.test))
