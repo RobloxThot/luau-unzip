@@ -6,10 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.0.1-rc.2] - 2025-01-06
+### Added
+- Support for symlinks - checking whether an entry is a symlink and following symlinks
+```luau
+local unzip = require("unzip")
+
+local zip = unzip.load(...)
+
+-- Given a ZIP of the structure: path/to/symlink -> path/to/target
+local entry = zip:findEntry("path/to/symlink")
+
+-- The following will return "path/to/target"
+local targetPath = zip:extract(entry, { isString = true, followSymlinks = false })
+print("Symlink target:", targetPath)
+
+-- The following will return the contents of "path/to/target"
+local followedTargetContents = zip:extract(entry, { isString = true, followSymlinks = true })
+local targetContents = zip:extract(zip:findEntry("path/to/target"), { isString = true })
+
+-- Following the symlink should give us the contents of the target file
+assert(targetContents == followedTargetContents, "Symlink must lead to the target file!")
+```
+### Fixed
+- Fixed a bug where ZIPs that contained an end of central directory record with a misaligned comment window would not be correctly read
+- Fixed an underflow while trying to align the byte boundary while decompressing uncompressed inflate blocks
+
 ## [0.0.1-rc.1] - 2025-01-06
 ### Added
 - Initial library release :tada:
 
-[unreleased]: https://github.com/0x5eal/luau-unzip/commits/HEAD
+[unreleased]: https://github.com/pesde-pkg/tooling/commits/HEAD
+[0.0.1-rc.2]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.2/any
 [0.0.1-rc.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.1/any
 
