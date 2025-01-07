@@ -10,6 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial library release :tada:
 
-[unreleased]: https://github.com/pesde-pkg/tooling/commits/HEAD
+[unreleased]: https://github.com/0x5eal/luau-unzip/commits/HEAD
 [0.0.1-rc.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.1/any
 
