@@ -113,6 +113,8 @@ return function(test: typeof(frktest.test))
 	
 							check.equal(tonumber(length), entry.size)
 							check.is_true(dateFuzzyEq(gotDateTime:formatLocalTime("%Y-%m-%d"), expectedDate :: string, 1))
+							
+							-- TODO: Use extra datetime field
 							check.is_true(
 								-- Allow a threshold of 26 hours, which is the largest possible gap between any two
 								-- timezones
