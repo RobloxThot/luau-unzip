@@ -313,10 +313,10 @@ end
 --- Processes an uncompressed block
 local function inflateUncompressedBlock(d: Data)
 	-- Align to byte boundary
-	while d.bitcount > 8 do
-		d.sourceIndex -= 1
-		d.bitcount -= 8
-	end
+	local bytesToMove = d.bitcount // 8
+	d.sourceIndex -= bytesToMove
+	d.bitcount = 0
+	d.tag = 0
 
 	-- Read block length and its complement
 	local length = buffer.readu8(d.source, d.sourceIndex + 1)
