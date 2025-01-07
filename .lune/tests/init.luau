@@ -21,7 +21,6 @@ local require = require :: (
 	))
 ) -> ()
 
-
 local function discoverTests(dir: string): { string }
 	local tests = {}
 
@@ -29,7 +28,7 @@ local function discoverTests(dir: string): { string }
 	for _, entry in entries do
 		local path = `{dir}/{entry}`
 
-		-- Look for files ending in `.spec.luau` as tests
+		-- Look for files ending in `.luau` as tests
 		if fs.isFile(path) and string.match(entry, "%.luau$") then
 			table.insert(tests, path)
 			continue
@@ -52,18 +51,16 @@ for _, test in discoverTests("tests") do
 	-- we run all the tests
 
 	-- So, to include only a certain set of test files, you can provide either
-	-- the full path of the test file or name of the test file, with or without
-	-- the `.luau` extension
-	local baseName = string.match(test, "([^/\\]+)$")
-
-	local withoutExt = string.sub(test, 1, -11)
-	local baseNameWithoutExt = string.match(withoutExt, "([^/\\]+)$")
-
+	-- the full path to the test file (with or without the extension) or the test
+	-- file name
+	local basename = string.match(test, "([^/\\]+)$") :: string
+	local basenameWithoutExt = string.gsub(basename, "%.luau$", "")
+	local testPath = string.gsub(test, "%.luau$", "")
 	local isAllowed = #process.args == 0
 		or table.find(allowedTests, test)
-		or table.find(allowedTests, withoutExt)
-		or table.find(allowedTests, baseName)
-		or table.find(allowedTests, baseNameWithoutExt)
+		or table.find(allowedTests, testPath)
+		or table.find(allowedTests, basename)
+		or table.find(allowedTests, basenameWithoutExt)
 
 	local constructors = {
 		case = frktest.test.case,
@@ -75,9 +72,7 @@ for _, test in discoverTests("tests") do
 		constructors.suite = frktest.test.skip.suite
 	end
 
-	require(`../../{test}`)(
-		setmetatable(constructors, { __index = frktest.test })
-	)
+	require(`../../{test}`)(setmetatable(constructors, { __index = frktest.test }))
 end
 
 reporter.init()
