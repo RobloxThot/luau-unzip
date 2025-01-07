@@ -5,7 +5,7 @@ local DateTime = require("@lune/datetime")
 local frktest = require("../lune_packages/frktest")
 local check = frktest.assert.check
 
-local ZipReader = require("../lib")
+local unzip = require("../lib")
 
 local ZIPS = fs.readDir("tests/data")
 local FALLIBLES = {
@@ -16,6 +16,11 @@ local FALLIBLES = {
 	"misaligned_comment.zip",
 	"comment_garbage.zip",
 	"chinese.zip" -- FIXME: Support encoding other than UTF-8 and ASCII using OS APIs after FFI
+}
+
+local METHOD_NAME_TRANSFORMATIONS: { [string]: unzip.CompressionMethod } = {
+	["Defl:N"] = "DEFLATE",
+	["Stored"] = "STORE",
 }
 
 local function timestampToValues(dosTimestamp: number): DateTime.DateTimeValues
@@ -83,7 +88,7 @@ return function(test: typeof(frktest.test))
 				checkErr(function(...)
 					file = "tests/data/" .. file
 					local data = fs.readFile(file)
-					local zip = ZipReader.load(buffer.fromstring(data))
+					local zip = unzip.load(buffer.fromstring(data))
 	
 					-- Get sizes from unzip command
 					local result = process.spawn("unzip", { "-v", file })
@@ -99,8 +104,8 @@ return function(test: typeof(frktest.test))
 							and not string.match(line, "files?$")
 							and #line > 0
 						then
-							-- TODO: Expose information about method, size, and compression ratio in API
-							local length, _method, _size, _cmpr, expectedDate, expectedTime, crc32, name = string.match(
+							-- TODO: Expose information about size, and compression ratio in API
+							local length, method, _size, _cmpr, expectedDate, expectedTime, crc32, name = string.match(
 								line,
 								"^%s*(%d+)%s+(%S+)%s+(%d+)%s+([+-]?%d*%%?)%s+(%d%d%d%d%-%d%d%-%d%d)%s+(%d%d:%d%d)%s+(%x+)%s+(.+)$"
 							)
@@ -110,8 +115,9 @@ return function(test: typeof(frktest.test))
 							local gotDateTime = DateTime.fromLocalTime(
 								timestampToValues(entry.timestamp) :: DateTime.DateTimeValueArguments
 							)
-	
+
 							check.equal(tonumber(length), entry.size)
+							check.equal(METHOD_NAME_TRANSFORMATIONS[method :: string], entry.method)
 							check.is_true(dateFuzzyEq(gotDateTime:formatLocalTime("%Y-%m-%d"), expectedDate :: string, 1))
 							
 							-- TODO: Use extra datetime field

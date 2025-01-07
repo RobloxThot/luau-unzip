@@ -232,7 +232,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 			ZipEntry.new(offset, name, {
 				size = size,
 				crc = crc,
-				compressionMethod = DECOMPRESSION_ROUTINES[compressionMethod].name,
+				method = DECOMPRESSION_ROUTINES[compressionMethod].name,
 				timestamp = timestamp,
 				attributes = externalAttrs,
 				isAscii = bit32.band(internalAttrs, 0x0001) ~= 0,
