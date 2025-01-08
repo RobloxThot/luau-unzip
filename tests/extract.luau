@@ -37,8 +37,8 @@ return function(test: typeof(frktest.test))
 					local zip = ZipReader.load(buffer.fromstring(data))
 
 					-- Test both string and buffer extraction
-					local stringOptions = { isString = true, decompress = true }
-					local bufferOptions = { isString = false, decompress = true }
+					local stringOptions = { type = "text" :: "text", decompress = true }
+					local bufferOptions = { type = "binary" :: "binary", decompress = true }
 
 					-- Extract and verify each file
 					zip:walk(function(entry)

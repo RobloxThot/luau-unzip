@@ -32,10 +32,10 @@ return function(test: typeof(frktest.test))
 			local entry = assert(zip:findEntry("/pandoc-3.2-arm64/bin/pandoc-lua"))
 			assert(entry:isSymlink(), "Entry type must be a symlink")
 
-			local targetPath = zip:extract(entry, { isString = true }) :: string
+			local targetPath = zip:extract(entry, { type = "text" }) :: string
 			check.equal(targetPath, "pandoc")
 
-			local bin = zip:extract(entry, { isString = false, followSymlinks = true }) :: buffer
+			local bin = zip:extract(entry, { type = "text", followSymlinks = true }) :: buffer
 			local expectedBin =
 				process.spawn("unzip", { "-p", "tests/data/pandoc_soft_links.zip", "pandoc-3.2-arm64/bin/pandoc" })
 			check.is_true(expectedBin.ok)

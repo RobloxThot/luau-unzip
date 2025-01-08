@@ -59,8 +59,7 @@ type ZipEntryInner = {
     method: CompressionMethod, -- Method used to compress the file
     crc: number,               -- CRC32 checksum of uncompressed data
     isDirectory: boolean,      -- Whether the entry is a directory or not
-	-- TODO: Rename to isText or similar in breaking change
-    isAscii: boolean,          -- Whether the entry is plain ASCII text or binary
+    isText: boolean,          -- Whether the entry is plain ASCII text or binary
     attributes: number,        -- File attributes
     parent: ZipEntry?,         -- The parent of the current entry, nil for root
     children: { ZipEntry },    -- The children of the entry
@@ -322,7 +321,7 @@ end
 type ExtractionOptions = {
 	followSymlinks: boolean?,
 	decompress: boolean?,
-	isString: boolean?, -- TODO: Rename to isText or similar in breaking change
+	type: ("binary" | "text")?,
 	skipCrcValidation: boolean?,
 	skipSizeValidation: boolean?,
 }
@@ -348,7 +347,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	local defaultOptions: ExtractionOptions = {
 		followSymlinks = false,
 		decompress = true,
-		isString = entry.isAscii,
+		type = if entry.isText then "text" else "binary",
 		skipValidation = false,
 	}
 
@@ -356,7 +355,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	local optionsOrDefault: {
 		followSymlinks: boolean,
 		decompress: boolean,
-		isString: boolean,
+		type: "binary" | "text",
 		skipCrcValidation: boolean,
 		skipSizeValidation: boolean,
 	} = if options
@@ -444,7 +443,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 			end
 
 			optionsOrDefault.followSymlinks = false
-			optionsOrDefault.isString = false
+			optionsOrDefault.type = "binary"
 			optionsOrDefault.skipCrcValidation = true
 			optionsOrDefault.skipSizeValidation = true
 			content =
@@ -463,7 +462,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 		)
 	end
 
-	return if optionsOrDefault.isString then buffer.tostring(content) else content
+	return if optionsOrDefault.type == "text" then buffer.tostring(content) else content
 end
 
 function ZipReader.extractDirectory(

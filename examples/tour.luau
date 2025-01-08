@@ -18,7 +18,7 @@ local function formatTree(tree: Tree): Tree<string>
 
 		-- File, format the value
 		local fileEntry = value :: EntryData
-		local content = reader:extract(assert(reader:findEntry(fileEntry.path)), { isString = true }) :: string
+		local content = reader:extract(assert(reader:findEntry(fileEntry.path)), { type = "text" }) :: string
 		local truncContents = content:gsub("\n", ""):sub(1, 100)
 
 		result[key] = string.format(
@@ -72,7 +72,7 @@ reader:walk(function(entry, depth)
 				path = entry:getPath(),
 				size = entry.size,
 				attributes = entry.attributes,
-				content = reader:extract(entry, { isString = true }) :: string,
+				content = reader:extract(entry, { type = "text" }) :: string,
 			}
 		end
 	end

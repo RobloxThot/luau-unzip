@@ -29,7 +29,7 @@ print("Directory structure:")
 reader:walk(function(entry, depth)
     local prefix = string.rep("  ", depth)
     local suffix = if not entry.isDirectory
-        then string.format(" (%d bytes), content: %s", entry.size, reader:extract(entry, { isString = true }) :: string)
+        then string.format(" (%d bytes), content: %s", entry.size, reader:extract(entry, { type = "text" }) :: string)
         else ""
     print(prefix .. entry.name .. suffix)
 end)
