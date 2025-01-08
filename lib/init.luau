@@ -109,6 +109,8 @@ function ZipEntry.getPath(self: ZipEntry): string
 	return path
 end
 
+-- TODO: More methods for `ZipEntry`, handle octals and unix perms
+
 local ZipReader = {}
 export type ZipReader = typeof(setmetatable({} :: ZipReaderInner, { __index = ZipReader }))
 -- stylua: ignore
