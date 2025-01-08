@@ -44,5 +44,18 @@ return function(test: typeof(frktest.test))
 			-- the entire binary data in case there's a mismatch
 			check.equal(serde.hash("blake3", bin), serde.hash("blake3", expectedBin.stdout))
 		end)
+
+		test.case("Extracts files with UTF8 names", function()
+			local data = fs.readFile("tests/data/utf8_filenames.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			local entries = {}
+			for _, entry in zip:listDirectory("/") do
+				table.insert(entries, entry.name)
+			end
+
+			check.equal(#entries, 3)
+			check.table.equal(entries, { "file_こんにちは.txt", "file_你好.txt", "file_안녕하세요.txt" })
+		end)
 	end)
 end

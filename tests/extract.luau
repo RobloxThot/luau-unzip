@@ -14,7 +14,7 @@ local FALLIBLES = {
 	-- "invalid_cde_number_of_files_allocation_smaller_offset.zip",
 	"invalid_offset.zip",
 	"invalid_offset2.zip",
-	"chinese.zip", -- TODO: Support UTF8 data in file names
+	"chinese.zip", -- Contains non UTF8 data which can't parse without OS APIs
 	"non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
 	"pandoc_soft_links.zip", -- Soft links are tested separately in edge_cases
 }
