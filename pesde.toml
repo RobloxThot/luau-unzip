@@ -9,7 +9,7 @@ includes = [
 	"LICENSE.md",
 	"pesde.toml",
 	"lib/**/*.luau",
-	"!tests/**",
+	"!tests/**/*",
 ]
 
 [target]
