@@ -44,8 +44,8 @@ assert(targetContents == followedTargetContents, "Symlink must lead to the targe
 ### Added
 - Initial library release :tada:
 
-[unreleased]: https://github.com/0x5eal/luau-unzi0p/commits/HEAD
-[0.0.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1/any
-[0.0.1-rc.2]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.2/any
-[0.0.1-rc.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.1/any
+[unreleased]: https://github.com/0x5eal/luau-unzip/commits/HEAD
+[0.0.1]: https://pesde.dev/packages/0x5eal/unzip/0.0.1/any
+[0.0.1-rc.2]: https://pesde.dev/packages/0x5eal/unzip/0.0.1-rc.2/any
+[0.0.1-rc.1]: https://pesde.dev/packages/0x5eal/unzip/0.0.1-rc.1/any
 
