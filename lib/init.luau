@@ -431,7 +431,6 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 				skip = true,
 			}))
 
-			
 			-- Check if the path was a relative path
 			if path.isRelative(linkPath) then
 				if string.sub(linkPath, -1) ~= "/" then

@@ -17,7 +17,7 @@ local FALLIBLES = {
 	-- FIXME: Does not error when it should
 	-- "comment_garbage.zip",
 	"chinese.zip",
-    "non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
+	"non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
 	"pandoc_soft_links.zip", -- Soft links are tested separately in edge_cases
 }
 
@@ -49,15 +49,15 @@ return function(test: typeof(frktest.test))
 						end
 
 						-- Extract with unzip for comparison
-						local unzipOutput = process.spawn(`unzip`, {  "-p", zipPath, entry:getPath() })
-						
+						local unzipOutput = process.spawn(`unzip`, { "-p", zipPath, entry:getPath() })
+
 						-- NOTE: We use assert since we don't know whether to expect true or false
 						assert(unzipOutput.ok)
 
 						-- Test string extraction
 						local contentString = zip:extract(entry, stringOptions) :: string
 						check.equal(#contentString, entry.size)
-                        check.equal(contentString, unzipOutput.stdout)
+						check.equal(contentString, unzipOutput.stdout)
 
 						-- Test buffer extraction
 						local contentBuffer = zip:extract(entry, bufferOptions) :: buffer

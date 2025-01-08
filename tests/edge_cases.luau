@@ -18,18 +18,19 @@ return function(test: typeof(frktest.test))
 
 		test.case("Follows symlinks correctly", function()
 			-- TODO: More test files with symlinks
-			
+
 			local data = fs.readFile("tests/data/pandoc_soft_links.zip")
 			local zip = ZipReader.load(buffer.fromstring(data))
-			
+
 			local entry = assert(zip:findEntry("/pandoc-3.2-arm64/bin/pandoc-lua"))
 			assert(entry:isSymlink(), "Entry type must be a symlink")
-	
+
 			local targetPath = zip:extract(entry, { isString = true }) :: string
 			check.equal(targetPath, "pandoc")
-	
+
 			local bin = zip:extract(entry, { isString = false, followSymlinks = true }) :: buffer
-			local expectedBin = process.spawn("unzip", { "-p", "tests/data/pandoc_soft_links.zip", "pandoc-3.2-arm64/bin/pandoc" })
+			local expectedBin =
+				process.spawn("unzip", { "-p", "tests/data/pandoc_soft_links.zip", "pandoc-3.2-arm64/bin/pandoc" })
 			check.is_true(expectedBin.ok)
 
 			-- Compare hashes instead of the entire binary to improve speed and not print out

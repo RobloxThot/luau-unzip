@@ -5,7 +5,7 @@ local asciitable = require("../luau_packages/asciitable")
 local file = fs.readFile("tests/data/files_and_dirs.zip")
 local reader = zip.load(buffer.fromstring(file))
 
---- Transforms a tree of recursive `{ [string]: EntryData }` to a recursive tree of 
+--- Transforms a tree of recursive `{ [string]: EntryData }` to a recursive tree of
 --- `{ [string]: string }`
 local function formatTree(tree: Tree): Tree<string>
 	local result: Tree<string> = {}

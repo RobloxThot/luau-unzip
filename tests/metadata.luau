@@ -15,7 +15,7 @@ local FALLIBLES = {
 	"invalid_offset2.zip",
 	"misaligned_comment.zip",
 	"comment_garbage.zip",
-	"chinese.zip" -- FIXME: Support encoding other than UTF-8 and ASCII using OS APIs after FFI
+	"chinese.zip", -- FIXME: Support encoding other than UTF-8 and ASCII using OS APIs after FFI
 }
 
 local METHOD_NAME_TRANSFORMATIONS: { [string]: unzip.CompressionMethod } = {
@@ -83,18 +83,20 @@ return function(test: typeof(frktest.test))
 				continue
 			end
 
-			local checkErr:(((...any) -> any?) -> nil) = if table.find(FALLIBLES, file) then check.should_error else check.should_not_error
+			local checkErr: ((...any) -> any?) -> nil = if table.find(FALLIBLES, file)
+				then check.should_error
+				else check.should_not_error
 			test.case(`Parsed metadata matches unzip output - {file}`, function()
 				checkErr(function(...)
 					file = "tests/data/" .. file
 					local data = fs.readFile(file)
 					local zip = unzip.load(buffer.fromstring(data))
-	
+
 					-- Get sizes from unzip command
 					local result = process.spawn("unzip", { "-v", file })
 					-- HACK: We use assert here since we don't know if we expect false or true
 					assert(result.ok)
-	
+
 					-- Parse unzip output
 					for line in string.gmatch(result.stdout, "[^\r\n]+") do
 						if
@@ -111,22 +113,24 @@ return function(test: typeof(frktest.test))
 							)
 
 							local entry = assert(zip:findEntry(assert(name)))
-	
+
 							local gotDateTime = DateTime.fromLocalTime(
 								timestampToValues(entry.timestamp) :: DateTime.DateTimeValueArguments
 							)
 
 							check.equal(tonumber(length), entry.size)
 							check.equal(METHOD_NAME_TRANSFORMATIONS[method :: string], entry.method)
-							check.is_true(dateFuzzyEq(gotDateTime:formatLocalTime("%Y-%m-%d"), expectedDate :: string, 1))
-							
+							check.is_true(
+								dateFuzzyEq(gotDateTime:formatLocalTime("%Y-%m-%d"), expectedDate :: string, 1)
+							)
+
 							-- TODO: Use extra datetime field
 							check.is_true(
 								-- Allow a threshold of 26 hours, which is the largest possible gap between any two
 								-- timezones
 								timeFuzzyEq(gotDateTime:formatLocalTime("%H:%M"), expectedTime :: string, 26 * 3600)
 							)
-	
+
 							check.equal(string.format("%08x", entry.crc), crc32)
 						end
 					end
