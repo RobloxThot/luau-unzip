@@ -23,6 +23,14 @@ local METHOD_NAME_TRANSFORMATIONS: { [string]: unzip.CompressionMethod } = {
 	["Stored"] = "STORE",
 }
 
+-- Non conclusive translations from host OS zipinfo field and MadeByOS union
+local OS_NAME_TRANSFORMATIONS: { [string]: unzip.MadeByOS } = {
+	["unx"] = "UNIX",
+	["hpf"] = "OS/2",
+	["mac"] = "MAC",
+	["ntfs"] = "NTFS",
+}
+
 local function timestampToValues(dosTimestamp: number): DateTime.DateTimeValues
 	local time = bit32.band(dosTimestamp, 0xFFFF)
 	local date = bit32.band(bit32.rshift(dosTimestamp, 16), 0xFFFF)
@@ -93,12 +101,12 @@ return function(test: typeof(frktest.test))
 					local zip = unzip.load(buffer.fromstring(data))
 
 					-- Get sizes from unzip command
-					local result = process.spawn("unzip", { "-v", file })
+					local unzipResult = process.spawn("unzip", { "-v", file })
 					-- HACK: We use assert here since we don't know if we expect false or true
-					assert(result.ok)
+					assert(unzipResult.ok)
 
 					-- Parse unzip output
-					for line in string.gmatch(result.stdout, "[^\r\n]+") do
+					for line in string.gmatch(unzipResult.stdout, "[^\r\n]+") do
 						if
 							not string.match(line, "^Archive:")
 							and not string.match(line, "^%s+Length")
@@ -113,6 +121,18 @@ return function(test: typeof(frktest.test))
 							)
 
 							local entry = assert(zip:findEntry(assert(name)))
+
+							local ok, zipinfoResult = pcall(process.spawn, "zipinfo", { file, name })
+							if ok then
+								-- Errors can only occur when there is a non utf-8 file name, in which case 
+								-- we skip that file
+								assert(zipinfoResult.ok)
+								local versionMadeBySoftware, versionMadeByOS =
+									string.match(zipinfoResult.stdout, "^.*%s+(%d+%.%d+)%s+(%S+).*$")
+
+								check.equal(versionMadeBySoftware, entry.versionMadeBy.software)
+								check.equal(OS_NAME_TRANSFORMATIONS[assert(versionMadeByOS)], entry.versionMadeBy.os)
+							end
 
 							local gotDateTime = DateTime.fromLocalTime(
 								timestampToValues(entry.timestamp) :: DateTime.DateTimeValueArguments

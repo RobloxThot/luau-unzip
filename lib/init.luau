@@ -38,11 +38,35 @@ local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress:
 	}
 
 local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
+	versionMadeBy = 0,
 	size = 0,
 	attributes = 0,
 	timestamp = 0,
 	crc = 0,
 })
+
+local MADE_BY_OS_LOOKUP: { [number]: MadeByOS } = {
+    [0x0] = "FAT",
+    [0x1] = "AMIGA", 
+    [0x2] = "VMS",
+    [0x3] = "UNIX",
+    [0x4] = "VM/CMS",
+    [0x5] = "Atari ST",
+    [0x6] = "OS/2",
+    [0x7] = "MAC",
+    [0x8] = "Z-System",
+    [0x9] = "CP/M",
+    [0xa] = "NTFS",
+    [0xb] = "MVS",
+    [0xc] = "VSE",
+    [0xd] = "Acorn RISCOS",
+    [0xe] = "VFAT",
+    [0xf] = "Alternate MVS",
+    [0x10] = "BeOS",
+    [0x11] = "TANDEM",
+    [0x12] = "OS/400",
+    [0x13] = "OS/X",
+}
 
 -- TODO: ERROR HANDLING!
 
@@ -50,8 +74,14 @@ local ZipEntry = {}
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
 -- stylua: ignore
 type ZipEntryInner = {
-    name: string,              -- File path within ZIP, '/' suffix indicates directory
-    size: number,              -- Uncompressed size in bytes
+	name: string,              -- File path within ZIP, '/' suffix indicates directory
+
+	versionMadeBy: {           -- Version of software and OS that created the ZIP
+		software: string,      -- Software version used to create the ZIP
+		os: MadeByOS,          -- Operating system used to create the ZIP
+	},
+
+	size: number,              -- Uncompressed size in bytes
     offset: number,            -- Absolute position of local header in ZIP
     timestamp: number,         -- MS-DOS format timestamp
     method: CompressionMethod, -- Method used to compress the file
@@ -63,8 +93,32 @@ type ZipEntryInner = {
     children: { ZipEntry },    -- The children of the entry
 }
 
+-- stylua: ignore
+export type MadeByOS =
+	| "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
+	| "AMIGA"         -- 0x1; Amiga
+	| "VMS"	          -- 0x2; OpenVMS
+	| "UNIX"          -- 0x3; Unix
+	| "VM/CMS"        -- 0x4; VM/CMS
+	| "Atari ST"      -- 0x5; Atari ST
+	| "OS/2"          -- 0x6; OS/2 HPFS
+	| "MAC"           -- 0x7; Macintosh
+	| "Z-System"      -- 0x8; Z-System
+	| "CP/M"          -- 0x9; Original CP/M
+	| "NTFS"          -- 0xa; Windows NTFS
+	| "MVS"           -- 0xb; OS/390 & VM/ESA
+	| "VSE"           -- 0xc; VSE
+	| "Acorn RISCOS"  -- 0xd; Acorn RISCOS
+	| "VFAT"          -- 0xe; VFAT
+	| "Alternate MVS" -- 0xf; Alternate MVS
+	| "BeOS"          -- 0x10; BeOS
+	| "TANDEM"        -- 0x11; Tandem
+	| "OS/400"        -- 0x12; OS/400
+	| "OS/X"          -- 0x13; Darwin
+	| "Unknown"       -- 0x14 - 0xff; Unused
 export type CompressionMethod = "STORE" | "DEFLATE"
 export type ZipEntryProperties = {
+	versionMadeBy: number,
 	size: number,
 	attributes: number,
 	timestamp: number,
@@ -73,9 +127,16 @@ export type ZipEntryProperties = {
 }
 
 function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperties): ZipEntry
+	local versionMadeByOS = bit32.rshift(properties.versionMadeBy, 8)
+	local versionMadeByVersion = bit32.band(properties.versionMadeBy, 0x00ff)
+	
 	return setmetatable(
 		{
 			name = name,
+			versionMadeBy = {
+				software = string.format("%d.%d", versionMadeByVersion / 10, versionMadeByVersion % 10),
+				os = MADE_BY_OS_LOOKUP[versionMadeByOS] :: MadeByOS,
+			},
 			size = properties.size,
 			offset = offset,
 			timestamp = properties.timestamp,
@@ -89,7 +150,6 @@ function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperti
 		{ __index = ZipEntry }
 	)
 end
-
 function ZipEntry.isSymlink(self: ZipEntry): boolean
 	return bit32.band(self.attributes, 0xA0000000) == 0xA0000000
 end
@@ -182,6 +242,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- Central Directory Entry format:
 		-- Offset  Bytes  Description
 		-- 0       4      Central directory entry signature
+		-- 4       2      Version made by
 		-- 8       2      General purpose bitflags
 		-- 10      2      Compression method (8 = DEFLATE)
 		-- 12      4      Last mod time/date
@@ -197,6 +258,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- 46+n    m      Extra field
 		-- 46+n+m  k      Comment
 
+		local versionMadeBy = buffer.readu16(self.data, pos + 4)
 		local _bitflags = buffer.readu16(self.data, pos + 8)
 		local timestamp = buffer.readu32(self.data, pos + 12)
 		local compressionMethod = buffer.readu16(self.data, pos + 10)
@@ -213,6 +275,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		table.insert(
 			self.entries,
 			ZipEntry.new(offset, name, {
+				versionMadeBy = versionMadeBy,
 				size = size,
 				crc = crc,
 				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
@@ -264,12 +327,15 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 						-- Create new directory entry for intermediate paths or undefined
 						-- parent directories in the ZIP
 						local dir = ZipEntry.new(0, path .. "/", {
+							versionMadeBy = 0,
 							size = 0,
 							crc = 0,
 							compressionMethod = "STORED",
 							timestamp = entry.timestamp,
 							attributes = entry.attributes,
 						})
+
+						dir.versionMadeBy = entry.versionMadeBy
 						dir.isDirectory = true
 						dir.parent = current
 						self.directories[path] = dir
