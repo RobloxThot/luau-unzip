@@ -37,7 +37,7 @@ assert(targetContents == followedTargetContents, "Symlink must lead to the targe
 ### Added
 - Initial library release :tada:
 
-[unreleased]: https://github.com/pesde-pkg/tooling/commits/HEAD
+[unreleased]: https://github.com/0x5eal/luau-unzi0p/commits/HEAD
 [0.0.1-rc.2]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.2/any
 [0.0.1-rc.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.1/any
 
