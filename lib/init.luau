@@ -16,11 +16,11 @@ local SIGNATURES = table.freeze({
 
 -- Decompression routines for each supported compression method
 local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, validateCrc.CrcValidationOptions) -> buffer } } =
-	table.freeze({
+	{
 		-- `STORE` decompression method - No compression
 		[0x00] = {
 			name = "STORE" :: CompressionMethod,
-			decompress = function(buf, _, validation)
+			decompress = function(buf, _, validation): buffer
 				validateCrc(buf, validation)
 				return buf
 			end,
@@ -29,15 +29,13 @@ local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress:
 		-- `DEFLATE` decompression method - Compressed raw deflate chunks
 		[0x08] = {
 			name = "DEFLATE" :: CompressionMethod,
-			decompress = function(buf, uncompressedSize, validation)
-				-- FIXME: Why is uncompressedSize not getting inferred correctly although it
-				-- is typed?
-				local decompressed = inflate(buf, uncompressedSize :: any)
+			decompress = function(buf, uncompressedSize, validation): buffer
+				local decompressed = inflate(buf, uncompressedSize)
 				validateCrc(decompressed, validation)
 				return decompressed
 			end,
 		},
-	})
+	}
 
 local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
 	size = 0,
