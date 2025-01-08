@@ -1,5 +1,6 @@
 local inflate = require("./inflate")
-local crc32 = require("./crc")
+local validateCrc = require("./utils/validate_crc")
+local path = require("./utils/path")
 
 -- Little endian constant signatures used in the ZIP file format
 local SIGNATURES = table.freeze({
@@ -13,27 +14,8 @@ local SIGNATURES = table.freeze({
 	END_OF_CENTRAL_DIR = 0x06054b50,
 })
 
-type CrcValidationOptions = {
-	skip: boolean,
-	expected: number,
-}
-
-local function validateCrc(decompressed: buffer, validation: CrcValidationOptions)
-	-- Unless skipping validation is requested, we verify the checksum
-	if not validation.skip then
-		local computed = crc32(decompressed)
-		assert(
-			validation.expected == computed,
-			`Validation failed; CRC checksum does not match: {string.format("%x", computed)} ~= {string.format(
-				"%x",
-				computed
-			)} (expected ~= got)`
-		)
-	end
-end
-
-export type CompressionMethod = "STORE" | "DEFLATE"
-local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, CrcValidationOptions) -> buffer } } =
+-- Decompression routines for each supported compression method
+local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress: (buffer, number, validateCrc.CrcValidationOptions) -> buffer } } =
 	table.freeze({
 		-- `STORE` decompression method - No compression
 		[0x00] = {
@@ -57,6 +39,13 @@ local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress:
 		},
 	})
 
+local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
+	size = 0,
+	attributes = 0,
+	timestamp = 0,
+	crc = 0,
+})
+
 -- TODO: ERROR HANDLING!
 
 local ZipEntry = {}
@@ -76,20 +65,14 @@ type ZipEntryInner = {
     children: { ZipEntry },    -- The children of the entry
 }
 
-type ZipEntryProperties = {
+export type CompressionMethod = "STORE" | "DEFLATE"
+export type ZipEntryProperties = {
 	size: number,
 	attributes: number,
 	timestamp: number,
 	method: CompressionMethod?,
 	crc: number,
 }
-local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
-	size = 0,
-	attributes = 0,
-	timestamp = 0,
-	method = nil,
-	crc = 0,
-})
 
 function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperties): ZipEntry
 	return setmetatable(
@@ -232,7 +215,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 			ZipEntry.new(offset, name, {
 				size = size,
 				crc = crc,
-				method = DECOMPRESSION_ROUTINES[compressionMethod].name,
+				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
 				timestamp = timestamp,
 				attributes = externalAttrs,
 				isAscii = bit32.band(internalAttrs, 0x0001) ~= 0,
@@ -244,43 +227,43 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 end
 
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
-    -- Sort entries to process directories first; I could either handle
-    -- directories and files in separate passes over the entries, or sort
-    -- the entries so I handled the directories first -- I decided to do
-    -- the latter
-    table.sort(self.entries, function(a, b)
-        if a.isDirectory ~= b.isDirectory then
-            return a.isDirectory
-        end
-        return a.name < b.name
-    end)
+	-- Sort entries to process directories first; I could either handle
+	-- directories and files in separate passes over the entries, or sort
+	-- the entries so I handled the directories first -- I decided to do
+	-- the latter
+	table.sort(self.entries, function(a, b)
+		if a.isDirectory ~= b.isDirectory then
+			return a.isDirectory
+		end
+		return a.name < b.name
+	end)
 
-    for _, entry in self.entries do
-        local parts = {}
-        -- Split entry path into individual components
-        -- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
-        for part in string.gmatch(entry.name, "([^/]+)/?") do
-            table.insert(parts, part)
-        end
+	for _, entry in self.entries do
+		local parts = {}
+		-- Split entry path into individual components
+		-- e.g. "folder/subfolder/file.txt" -> {"folder", "subfolder", "file.txt"}
+		for part in string.gmatch(entry.name, "([^/]+)/?") do
+			table.insert(parts, part)
+		end
 
-        -- Start from root directory
-        local current = self.root
-        local path = ""
+		-- Start from root directory
+		local current = self.root
+		local path = ""
 
-        -- Process each path component
-        for i, part in parts do
-            path ..= part
+		-- Process each path component
+		for i, part in parts do
+			path ..= part
 
-            if i < #parts or entry.isDirectory then
-                -- Create missing directory entries for intermediate paths
-                if not self.directories[path] then
-                    if entry.isDirectory and i == #parts then
-                        -- Existing directory entry, reuse it
-                        self.directories[path] = entry
-                    else
-                        -- Create new directory entry for intermediate paths or undefined
-                        -- parent directories in the ZIP
-                        local dir = ZipEntry.new(0, path .. "/", {
+			if i < #parts or entry.isDirectory then
+				-- Create missing directory entries for intermediate paths
+				if not self.directories[path] then
+					if entry.isDirectory and i == #parts then
+						-- Existing directory entry, reuse it
+						self.directories[path] = entry
+					else
+						-- Create new directory entry for intermediate paths or undefined
+						-- parent directories in the ZIP
+						local dir = ZipEntry.new(0, path .. "/", {
 							size = 0,
 							crc = 0,
 							compressionMethod = "STORED",
@@ -290,22 +273,22 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 						dir.isDirectory = true
 						dir.parent = current
 						self.directories[path] = dir
-                    end
+					end
 
-                    -- Track directory in both lookup table and parent's children
-                    table.insert(current.children, self.directories[path])
-                end
+					-- Track directory in both lookup table and parent's children
+					table.insert(current.children, self.directories[path])
+				end
 
-                -- Move deeper into the tree
-                current = self.directories[path]
-                continue
-            end
+				-- Move deeper into the tree
+				current = self.directories[path]
+				continue
+			end
 
-            -- Link file entry to its parent directory
-            entry.parent = current
-            table.insert(current.children, entry)
-        end
-    end
+			-- Link file entry to its parent directory
+			entry.parent = current
+			table.insert(current.children, entry)
+		end
+	end
 end
 
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
@@ -336,7 +319,7 @@ end
 type ExtractionOptions = {
 	followSymlinks: boolean?,
 	decompress: boolean?,
-	isString: boolean?,
+	isString: boolean?, -- TODO: Rename to isText or similar in breaking change
 	skipCrcValidation: boolean?,
 	skipSizeValidation: boolean?,
 }
@@ -448,54 +431,22 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 				skip = true,
 			}))
 
-			--- Canonicalize a path by removing redundant components
-			local function canonicalize(path: string): string
-				-- NOTE: It is fine for us to use `/` here because ZIP file names
-				-- always use `/` as the path separator
-				local components = string.split(path, "/")
-				local result = {}
-				for _, component in components do
-					if component == "." then
-						-- Skip current directory
-						continue
-					end
-
-					if component == ".." then
-						-- Traverse one upwards
-						table.remove(result, #result)
-						continue
-					end
-
-					-- Otherwise, add the component to the result
-					table.insert(result, component)
-				end
-
-				return table.concat(result, "/")
-			end
-
+			
 			-- Check if the path was a relative path
-			if
-				not (
-					string.match(linkPath, "^/")
-					or string.match(linkPath, "^[a-zA-Z]:[\\/]")
-					or string.match(linkPath, "^//")
-				)
-			then
+			if path.isRelative(linkPath) then
 				if string.sub(linkPath, -1) ~= "/" then
 					linkPath ..= "/"
 				end
 
-				linkPath = canonicalize(`{(entry.parent or self.root).name}{linkPath}`)
+				linkPath = path.canonicalize(`{(entry.parent or self.root).name}{linkPath}`)
 			end
 
 			optionsOrDefault.followSymlinks = false
 			optionsOrDefault.isString = false
 			optionsOrDefault.skipCrcValidation = true
 			optionsOrDefault.skipSizeValidation = true
-			content = self:extract(
-				self:findEntry(linkPath) or error("Symlink path not found"),
-				optionsOrDefault
-			) :: buffer
+			content =
+				self:extract(self:findEntry(linkPath) or error("Symlink path not found"), optionsOrDefault) :: buffer
 		end
 
 		content = algo.decompress(content, uncompressedSize, {
