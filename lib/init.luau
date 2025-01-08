@@ -59,6 +59,7 @@ type ZipEntryInner = {
     method: CompressionMethod, -- Method used to compress the file
     crc: number,               -- CRC32 checksum of uncompressed data
     isDirectory: boolean,      -- Whether the entry is a directory or not
+	-- TODO: Rename to isText or similar in breaking change
     isAscii: boolean,          -- Whether the entry is plain ASCII text or binary
     attributes: number,        -- File attributes
     parent: ZipEntry?,         -- The parent of the current entry, nil for root
