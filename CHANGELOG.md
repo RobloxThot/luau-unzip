@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.0.1] - 2025-01-07
+### Changed
+- Improved output format for `tour` example
+- Relaxed MSLV requirement to 0.593
+- Refactored utilities as separate modules
+- Improved test coverage with more edge case tests
+
 ## [0.0.1-rc.2] - 2025-01-06
 ### Added
 - Support for symlinks - checking whether an entry is a symlink and following symlinks
@@ -38,6 +45,7 @@ assert(targetContents == followedTargetContents, "Symlink must lead to the targe
 - Initial library release :tada:
 
 [unreleased]: https://github.com/0x5eal/luau-unzi0p/commits/HEAD
+[0.0.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1/any
 [0.0.1-rc.2]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.2/any
 [0.0.1-rc.1]: https://pesde.dev/packages/pesde/toolchainlib/0.0.1-rc.1/any
 

@@ -1,5 +1,5 @@
 name = "0x5eal/unzip"
-version = "0.0.1-rc.2"
+version = "0.0.1"
 target = "luau"
 
 [graph."itsfrank/frktest"."0.0.2 lune"]
