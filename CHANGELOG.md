@@ -28,6 +28,7 @@ local targetContents = zip:extract(zip:findEntry("path/to/target"), { isString =
 -- Following the symlink should give us the contents of the target file
 assert(targetContents == followedTargetContents, "Symlink must lead to the target file!")
 ```
+- Added the `isAscii` field and automatic compressed data type detection when the `isString` option is not provided using internal file attributes
 ### Fixed
 - Fixed a bug where ZIPs that contained an end of central directory record with a misaligned comment window would not be correctly read
 - Fixed an underflow while trying to align the byte boundary while decompressing uncompressed inflate blocks
