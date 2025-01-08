@@ -16,6 +16,13 @@ return function(test: typeof(frktest.test))
 			check.equal(zip.comment, "short.")
 		end)
 
+		test.case("Handles comment with garbage after properly", function()
+			local data = fs.readFile("tests/data/comment_garbage.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			check.equal(zip.comment, "short.")
+		end)
+
 		test.case("Follows symlinks correctly", function()
 			-- TODO: More test files with symlinks
 
