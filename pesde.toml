@@ -22,3 +22,4 @@ default = "https://github.com/pesde-pkg/index"
 [dev_dependencies]
 stylua = { name = "pesde/stylua", version = "^2.0.2", target = "lune" }
 frktest = { name = "itsfrank/frktest", version = "^0.0.2", target = "lune" }
+asciitable = { name = "kimpure/asciitable", version = "^0.1.4" }
