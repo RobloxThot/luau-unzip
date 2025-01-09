@@ -121,6 +121,10 @@ return function(test: typeof(frktest.test))
 
 							local entry = assert(zip:findEntry(assert(name)))
 
+							if entry.versionMadeBy.os == "UNIX" then 
+								check.not_nil(entry:unixMode())
+							end
+							
 							local ok, zipinfoResult = pcall(process.spawn, "zipinfo", { file, name })
 							if ok then
 								-- Errors can only occur when there is a non utf-8 file name, in which case 

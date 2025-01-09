@@ -22,9 +22,9 @@ local function formatTree(tree: Tree): Tree<string>
 		local truncContents = content:gsub("\n", ""):sub(1, 100)
 
 		result[key] = string.format(
-			"(%d bytes), attrs: 0x%x, content: %s",
+			"(%d bytes), perms: %s, content: %s",
 			fileEntry.size,
-			fileEntry.attributes,
+			fileEntry.unixMode.perms,
 			truncContents .. (if #content > 100 then "..." else "")
 		)
 	end
@@ -35,6 +35,7 @@ end
 local tree: Tree = {}
 type Tree<T = EntryData> = { [string]: T | Tree<T> }
 type EntryData = {
+	unixMode: zip.UnixMode,
 	path: string,
 	size: number,
 	attributes: number,
@@ -69,6 +70,7 @@ reader:walk(function(entry, depth)
 			current[name] = {}
 		else
 			current[name] = {
+				unixMode = assert(entry:unixMode(), "Not a unix file"),
 				path = entry:getPath(),
 				size = entry.size,
 				attributes = entry.attributes,

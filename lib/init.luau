@@ -184,7 +184,7 @@ function ZipEntry.sanitizePath(self: ZipEntry): string
 end
 
 function ZipEntry.compressionEfficiency(self: ZipEntry): number?
-	if self.size == 0 or self.compressedSize == 0 then 
+	if self.size == 0 or self.compressedSize == 0 then
 		return nil
 	end
 
@@ -192,7 +192,25 @@ function ZipEntry.compressionEfficiency(self: ZipEntry): number?
 	return math.round(ratio * 100)
 end
 
--- TODO: More methods for `ZipEntry`, handle octals and unix perms
+function ZipEntry.isFile(self: ZipEntry): boolean
+	return not (self.isDirectory and self:isSymlink())
+end
+
+export type UnixMode = { perms: string, typeFlags: string }
+function ZipEntry.unixMode(self: ZipEntry): UnixMode?
+	if self.versionMadeBy.os ~= "UNIX" then
+		return nil
+	end
+
+	local mode = bit32.rshift(self.attributes, 16)
+	local typeFlags = bit32.band(self.attributes, 0x1FF)
+	local perms = bit32.band(mode, 0x01FF)
+
+	return {
+		perms = string.format("0o%o", perms),
+		typeFlags = string.format("0o%o", typeFlags),
+	}
+end
 
 local ZipReader = {}
 export type ZipReader = typeof(setmetatable({} :: ZipReaderInner, { __index = ZipReader }))
