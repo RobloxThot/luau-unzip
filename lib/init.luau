@@ -46,29 +46,27 @@ local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
 })
 
 local MADE_BY_OS_LOOKUP: { [number]: MadeByOS } = {
-    [0x0] = "FAT",
-    [0x1] = "AMIGA", 
-    [0x2] = "VMS",
-    [0x3] = "UNIX",
-    [0x4] = "VM/CMS",
-    [0x5] = "Atari ST",
-    [0x6] = "OS/2",
-    [0x7] = "MAC",
-    [0x8] = "Z-System",
-    [0x9] = "CP/M",
-    [0xa] = "NTFS",
-    [0xb] = "MVS",
-    [0xc] = "VSE",
-    [0xd] = "Acorn RISCOS",
-    [0xe] = "VFAT",
-    [0xf] = "Alternate MVS",
-    [0x10] = "BeOS",
-    [0x11] = "TANDEM",
-    [0x12] = "OS/400",
-    [0x13] = "OS/X",
+	[0x0] = "FAT",
+	[0x1] = "AMIGA",
+	[0x2] = "VMS",
+	[0x3] = "UNIX",
+	[0x4] = "VM/CMS",
+	[0x5] = "Atari ST",
+	[0x6] = "OS/2",
+	[0x7] = "MAC",
+	[0x8] = "Z-System",
+	[0x9] = "CP/M",
+	[0xa] = "NTFS",
+	[0xb] = "MVS",
+	[0xc] = "VSE",
+	[0xd] = "Acorn RISCOS",
+	[0xe] = "VFAT",
+	[0xf] = "Alternate MVS",
+	[0x10] = "BeOS",
+	[0x11] = "TANDEM",
+	[0x12] = "OS/400",
+	[0x13] = "OS/X",
 }
-
--- TODO: ERROR HANDLING!
 
 local ZipEntry = {}
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
@@ -129,7 +127,7 @@ export type ZipEntryProperties = {
 function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperties): ZipEntry
 	local versionMadeByOS = bit32.rshift(properties.versionMadeBy, 8)
 	local versionMadeByVersion = bit32.band(properties.versionMadeBy, 0x00ff)
-	
+
 	return setmetatable(
 		{
 			name = name,
@@ -164,6 +162,21 @@ function ZipEntry.getPath(self: ZipEntry): string
 	end
 
 	return path
+end
+
+function ZipEntry.getSafePath(self: ZipEntry): string?
+	local pathStr = self:getPath()
+
+	if path.isSafe(pathStr) then
+		return pathStr
+	end
+
+	return nil
+end
+
+function ZipEntry.sanitizePath(self: ZipEntry): string
+	local pathStr = self:getPath()
+	return path.sanitize(pathStr)
 end
 
 -- TODO: More methods for `ZipEntry`, handle octals and unix perms
