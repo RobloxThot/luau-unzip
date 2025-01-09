@@ -87,7 +87,7 @@ type ZipEntryInner = {
     method: CompressionMethod, -- Method used to compress the file
     crc: number,               -- CRC32 checksum of uncompressed data
     isDirectory: boolean,      -- Whether the entry is a directory or not
-    isText: boolean,          -- Whether the entry is plain ASCII text or binary
+    isText: boolean,           -- Whether the entry is plain ASCII text or binary
     attributes: number,        -- File attributes
     parent: ZipEntry?,         -- The parent of the current entry, nil for root
     children: { ZipEntry },    -- The children of the entry
@@ -328,7 +328,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
 				timestamp = timestamp,
 				attributes = externalAttrs,
-				isAscii = bit32.band(internalAttrs, 0x0001) ~= 0,
+				isText = bit32.band(internalAttrs, 0x0001) ~= 0,
 			})
 		)
 
