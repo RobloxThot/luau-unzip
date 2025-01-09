@@ -114,8 +114,7 @@ return function(test: typeof(frktest.test))
 							and not string.match(line, "files?$")
 							and #line > 0
 						then
-							-- TODO: Expose information about size, and compression ratio in API
-							local length, method, _size, _cmpr, expectedDate, expectedTime, crc32, name = string.match(
+							local length, method, size, cmpr, expectedDate, expectedTime, crc32, name = string.match(
 								line,
 								"^%s*(%d+)%s+(%S+)%s+(%d+)%s+([+-]?%d*%%?)%s+(%d%d%d%d%-%d%d%-%d%d)%s+(%d%d:%d%d)%s+(%x+)%s+(.+)$"
 							)
@@ -134,11 +133,18 @@ return function(test: typeof(frktest.test))
 								check.equal(OS_NAME_TRANSFORMATIONS[assert(versionMadeByOS)], entry.versionMadeBy.os)
 							end
 
+							local gotCmpr = entry:compressionEfficiency()
 							local gotDateTime = DateTime.fromLocalTime(
 								timestampToValues(entry.timestamp) :: DateTime.DateTimeValueArguments
 							)
 
 							check.equal(tonumber(length), entry.size)
+							check.equal(tonumber(size), entry.compressedSize)
+
+							if gotCmpr ~= nil then
+								check.equal(cmpr, gotCmpr .. "%")
+							end
+							
 							check.equal(METHOD_NAME_TRANSFORMATIONS[method :: string], entry.method)
 							check.is_true(
 								dateFuzzyEq(gotDateTime:formatLocalTime("%Y-%m-%d"), expectedDate :: string, 1)

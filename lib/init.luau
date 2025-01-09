@@ -39,6 +39,7 @@ local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress:
 
 local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
 	versionMadeBy = 0,
+	compressedSize = 0,
 	size = 0,
 	attributes = 0,
 	timestamp = 0,
@@ -79,6 +80,7 @@ type ZipEntryInner = {
 		os: MadeByOS,          -- Operating system used to create the ZIP
 	},
 
+	compressedSize: number,    -- Compressed size in bytes
 	size: number,              -- Uncompressed size in bytes
     offset: number,            -- Absolute position of local header in ZIP
     timestamp: number,         -- MS-DOS format timestamp
@@ -117,6 +119,7 @@ export type MadeByOS =
 export type CompressionMethod = "STORE" | "DEFLATE"
 export type ZipEntryProperties = {
 	versionMadeBy: number,
+	compressedSize: number,
 	size: number,
 	attributes: number,
 	timestamp: number,
@@ -135,6 +138,7 @@ function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperti
 				software = string.format("%d.%d", versionMadeByVersion / 10, versionMadeByVersion % 10),
 				os = MADE_BY_OS_LOOKUP[versionMadeByOS] :: MadeByOS,
 			},
+			compressedSize = properties.compressedSize,
 			size = properties.size,
 			offset = offset,
 			timestamp = properties.timestamp,
@@ -177,6 +181,15 @@ end
 function ZipEntry.sanitizePath(self: ZipEntry): string
 	local pathStr = self:getPath()
 	return path.sanitize(pathStr)
+end
+
+function ZipEntry.compressionEfficiency(self: ZipEntry): number?
+	if self.size == 0 or self.compressedSize == 0 then 
+		return nil
+	end
+
+	local ratio = 1 - self.compressedSize / self.size
+	return math.round(ratio * 100)
 end
 
 -- TODO: More methods for `ZipEntry`, handle octals and unix perms
@@ -260,6 +273,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		-- 10      2      Compression method (8 = DEFLATE)
 		-- 12      4      Last mod time/date
 		-- 16      4      CRC-32
+		-- 20      4      Compressed size
 		-- 24      4      Uncompressed size
 		-- 28      2      File name length (n)
 		-- 30      2      Extra field length (m)
@@ -276,6 +290,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local timestamp = buffer.readu32(self.data, pos + 12)
 		local compressionMethod = buffer.readu16(self.data, pos + 10)
 		local crc = buffer.readu32(self.data, pos + 16)
+		local compressedSize = buffer.readu32(self.data, pos + 20)
 		local size = buffer.readu32(self.data, pos + 24)
 		local nameLength = buffer.readu16(self.data, pos + 28)
 		local extraLength = buffer.readu16(self.data, pos + 30)
@@ -289,6 +304,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 			self.entries,
 			ZipEntry.new(offset, name, {
 				versionMadeBy = versionMadeBy,
+				compressedSize = compressedSize,
 				size = size,
 				crc = crc,
 				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
@@ -341,6 +357,7 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 						-- parent directories in the ZIP
 						local dir = ZipEntry.new(0, path .. "/", {
 							versionMadeBy = 0,
+							compressedSize = 0,
 							size = 0,
 							crc = 0,
 							compressionMethod = "STORED",
