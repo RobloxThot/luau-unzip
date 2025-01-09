@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `ZipEntry` now has a `versionMadeBy` field which includes information about the host system and version of the ZIP file
+- `ZipEntry` now has a `compressedSize` field which indicates the size of the compressed data
+- Added method `ZipEntry:compressionEfficiency` to return compression efficiency in the form of a percentage
+- Added method `ZipEntry:unixMode` to parse and extract unix mode information from external file attributes
+- Added methods to handle path safety and sanitization were added to `ZipEntry`: 
+```luau
+-- NOTE: All paths returned by methods use `/` as the path separator
+
+-- Returns the path if it is safe, otherwise returns nil
+entry:getSafePath()
+
+-- Converts a potentially unsafe path to a safe one, possibly losing some information
+entry:sanitizePath()
+```
+### Changed
+- Renamed `isAscii` field for `ZipEntry` to `isText`
+- Renamed `isString` option for `ZipReader:extract` to `isText`
+### Fixed
+- Removed any typecast for internal decompression utilities due to `table.freeze` interfering with types
 
 ## [0.0.1] - 2025-01-07
 ### Changed
