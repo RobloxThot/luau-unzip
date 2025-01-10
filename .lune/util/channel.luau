@@ -1,5 +1,5 @@
---- An MPSC synchronization primitive powered by Lua upvalues which retains only
---- one value at a time.
+--> util: An MPSC synchronization primitive powered by Lua upvalues which retains only
+--> one value at a time.
 
 --- ## Usage
 --- ```luau

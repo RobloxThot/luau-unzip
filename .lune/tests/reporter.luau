@@ -1,3 +1,5 @@
+--> lib: Extension to base frktest reporter for live status reporting
+
 local stdio = require("@lune/stdio")
 
 local frktest = require("../../lune_packages/frktest")
