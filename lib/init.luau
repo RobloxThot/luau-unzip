@@ -2,6 +2,9 @@ local inflate = require("./inflate")
 local validateCrc = require("./utils/validate_crc")
 local path = require("./utils/path")
 
+-- The maximum supported PKZIP format specification version that we support
+local MAX_SUPPORTED_PKZIP_VERSION = 63
+
 -- Little endian constant signatures used in the ZIP file format
 local SIGNATURES = table.freeze({
 	-- Marks the beginning of each file in the ZIP
@@ -37,6 +40,7 @@ local DECOMPRESSION_ROUTINES: { [number]: { name: CompressionMethod, decompress:
 		},
 	}
 
+-- Set of placeholder entry properties for incompatible entries
 local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
 	versionMadeBy = 0,
 	compressedSize = 0,
@@ -46,6 +50,7 @@ local EMPTY_PROPERTIES: ZipEntryProperties = table.freeze({
 	crc = 0,
 })
 
+-- Lookup table for the OS that created the ZIP
 local MADE_BY_OS_LOOKUP: { [number]: MadeByOS } = {
 	[0x0] = "FAT",
 	[0x1] = "AMIGA",
@@ -441,6 +446,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	-- Local File Header format:
 	-- Offset  Bytes  Description
 	-- 0       4      Local file header signature
+	-- 4       2      Version needed to extract
 	-- 6       2      General purpose bitflags
 	-- 8       2      Compression method (8 = DEFLATE)
 	-- 14      4      CRC32 checksum
@@ -478,6 +484,10 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	if buffer.readu32(self.data, pos) ~= SIGNATURES.LOCAL_FILE then
 		error("Invalid local file header")
 	end
+
+	-- Validate that the version needed to extract is supported
+	local versionNeeded = buffer.readu16(self.data, pos + 4)
+	assert(MAX_SUPPORTED_PKZIP_VERSION >= versionNeeded, `Unsupported PKZip spec version: {versionNeeded}`)
 
 	local bitflags = buffer.readu16(self.data, pos + 6)
 	local crcChecksum = buffer.readu32(self.data, pos + 14)
