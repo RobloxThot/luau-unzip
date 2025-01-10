@@ -50,7 +50,7 @@ print("Total size:", stats.totalSize, "bytes")
 ```
 
 ## MSLV (Minimum Supported Luau Version)
-This library requires at least Luau [0.601](https://github.com/luau-lang/luau/releases/tag/0.601).
+This library requires at least Luau [0.629](https://github.com/luau-lang/luau/releases/tag/0.629) (specifically requires leading `|`, `buffer` built-in and `idiv` operator support).
 
 ## License
 This project is licensed under the [MIT] license.
