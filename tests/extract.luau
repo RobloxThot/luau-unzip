@@ -10,11 +10,10 @@ local ZipReader = require("../lib")
 local ZIPS = fs.readDir("tests/data")
 local FALLIBLES = {
 	"invalid_cde_number_of_files_allocation_greater_offset.zip",
-	-- FIXME: Incorrectly handled, file tree is empty and walk silently errors
-	-- "invalid_cde_number_of_files_allocation_smaller_offset.zip",
+	"invalid_cde_number_of_files_allocation_smaller_offset.zip",
 	"invalid_offset.zip",
 	"invalid_offset2.zip",
-	"chinese.zip", -- Contains non UTF8 data which can't parse without OS APIs
+	"chinese.zip", -- Contains non local specific encoding which can't be parsed without OS APIs
 	"non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
 	"pandoc_soft_links.zip", -- Soft links are tested separately in edge_cases
 }

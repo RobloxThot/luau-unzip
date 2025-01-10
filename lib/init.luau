@@ -280,14 +280,23 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	-- 20      2      Comment length (n)
 	-- 22      n      Comment
 
-	local cdOffset = buffer.readu32(self.data, pos + 16)
+	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdEntries = buffer.readu16(self.data, pos + 10)
-	local cdCommentLength = buffer.readu16(self.data, pos + 20)
-	self.comment = buffer.readstring(self.data, pos + 22, cdCommentLength)
+	local cdOffset = buffer.readu32(self.data, pos + 16)
 
-	-- Process each entry in the Central Directory
+	-- Strict validation of CD boundaries and entry count
+	if cdOffset >= bufSize or cdOffset + cdSize > bufSize then
+		error("Invalid Central Directory offset or size")
+	end
+
+	-- Track actual entries found
+	local entriesFound = 0
 	pos = cdOffset
-	for i = 1, cdEntries do
+	while pos < cdOffset + cdSize do
+		if buffer.readu32(self.data, pos) ~= SIGNATURES.CENTRAL_DIR then
+			error("Invalid Central Directory entry signature")
+		end
+
 		-- Central Directory Entry format:
 		-- Offset  Bytes  Description
 		-- 0       4      Central directory entry signature
@@ -338,7 +347,15 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		)
 
 		pos = pos + 46 + nameLength + extraLength + commentLength
+		entriesFound += 1
 	end
+
+	if entriesFound ~= cdEntries then
+		error("Found different entries than specified in Central Directory")
+	end
+
+	local cdCommentLength = buffer.readu16(self.data, pos + 20)
+	self.comment = buffer.readstring(self.data, pos + 22, cdCommentLength)
 end
 
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
