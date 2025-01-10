@@ -12,6 +12,12 @@ includes = [
 	"!tests/**/*",
 ]
 
+[scripts]
+tests = ".lune/tests/init.luau"
+fmt = ".lune/fmt.luau"
+typecheck = ".lune/typecheck.luau"
+generate_invalid_version_zip = "scripts/generate_invalid_version_zip.luau"
+
 [target]
 environment = "luau"
 lib = "lib/init.luau"
