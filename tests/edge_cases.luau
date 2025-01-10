@@ -57,5 +57,14 @@ return function(test: typeof(frktest.test))
 			check.equal(#entries, 3)
 			check.table.equal(entries, { "file_こんにちは.txt", "file_你好.txt", "file_안녕하세요.txt" })
 		end)
+
+		test.case("Errors on invalid extraction version requirement", function()
+			local data = fs.readFile("tests/data/invalid_version.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			check.should_error(function()
+				return zip:extractDirectory("/", { type = "text" })
+			end)
+		end)
 	end)
 end

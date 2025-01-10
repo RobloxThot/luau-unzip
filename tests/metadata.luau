@@ -13,6 +13,7 @@ local FALLIBLES = {
 	"invalid_cde_number_of_files_allocation_smaller_offset.zip",
 	"invalid_offset.zip",
 	"invalid_offset2.zip",
+	"invalid_version.zip",
 	"misaligned_comment.zip",
 	"comment_garbage.zip",
 	"chinese.zip", -- FIXME: Support encoding other than UTF-8 and ASCII using OS APIs after FFI
@@ -94,8 +95,9 @@ return function(test: typeof(frktest.test))
 			local checkErr: ((...any) -> any?) -> nil = if table.find(FALLIBLES, file)
 				then check.should_error
 				else check.should_not_error
+
 			test.case(`Parsed metadata matches unzip output - {file}`, function()
-				checkErr(function(...)
+				checkErr(function()
 					file = "tests/data/" .. file
 					local data = fs.readFile(file)
 					local zip = unzip.load(buffer.fromstring(data))
@@ -165,7 +167,7 @@ return function(test: typeof(frktest.test))
 						end
 					end
 
-					return
+					return "<test>"
 				end)
 			end)
 		end
