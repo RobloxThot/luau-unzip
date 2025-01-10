@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 ### Added
+- PKZip version validation before extracting files
 - `ZipEntry` now has a `versionMadeBy` field which includes information about the host system and version of the ZIP file
 - `ZipEntry` now has a `compressedSize` field which indicates the size of the compressed data
 - Added method `ZipEntry:compressionEfficiency` to return compression efficiency in the form of a percentage
@@ -24,6 +25,7 @@ entry:sanitizePath()
 - Renamed `isAscii` field for `ZipEntry` to `isText`
 - Renamed `isString` option for `ZipReader:extract` to `isText`
 ### Fixed
+- Fixed a bug where `ZipReader:extract` would not correctly error when there was a mismatch between the count of entries specified in the EoCD and the number of entries found
 - Removed any typecast for internal decompression utilities due to `table.freeze` interfering with types
 
 ## [0.0.1] - 2025-01-07
