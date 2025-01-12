@@ -157,6 +157,7 @@ function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperti
 		{ __index = ZipEntry }
 	)
 end
+
 function ZipEntry.isSymlink(self: ZipEntry): boolean
 	return bit32.band(self.attributes, 0xA0000000) == 0xA0000000
 end
