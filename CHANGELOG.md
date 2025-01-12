@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.0] - 2025-01-12
+
+`luau-unzip` is finally stable and tested enough for a v0.1.0 release! This release includes important bug fixes and a handful of new features as well. It does also have have breaking changes, so please take a look at the changed section below for those.
+
 ### Added
 - PKZip version validation before extracting files
 - `ZipEntry` now has a `versionMadeBy` field which includes information about the host system and version of the ZIP file
@@ -67,6 +72,7 @@ assert(targetContents == followedTargetContents, "Symlink must lead to the targe
 - Initial library release :tada:
 
 [unreleased]: https://github.com/0x5eal/luau-unzip/commits/HEAD
+[0.1.0]: https://pesde.dev/packages/0x5eal/unzip/0.1.0/any
 [0.0.1]: https://pesde.dev/packages/0x5eal/unzip/0.0.1/any
 [0.0.1-rc.2]: https://pesde.dev/packages/0x5eal/unzip/0.0.1-rc.2/any
 [0.0.1-rc.1]: https://pesde.dev/packages/0x5eal/unzip/0.0.1-rc.1/any
