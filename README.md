@@ -15,11 +15,10 @@ A Luau library to unzip and extract files from ZIP archives. The implementation 
 ## Usage
 
 ```luau
-local fs = require("@lune/fs")
-local zip = require("luau-unzip")
+local zip = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxThot/luau-unzip/main/lib/init.luau", true))()
 
 -- Read the ZIP file
-local file = fs.readFile("test.zip")
+local file = readFile("test.zip")
 
 -- Load the ZIP archive
 local reader = zip.load(buffer.fromstring(file))

@@ -1,6 +1,6 @@
-local inflate = require("./inflate")
-local validateCrc = require("./utils/validate_crc")
-local path = require("./utils/path")
+local inflate = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxThot/luau-unzip/main/lib/inflate.luau", true))()
+local validateCrc = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxThot/luau-unzip/main/lib/utils/validate_crc.luau", true))()
+local path = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxThot/luau-unzip/main/lib/utils/path.luau", true))()
 
 -- The maximum supported PKZIP format specification version that we support
 local MAX_SUPPORTED_PKZIP_VERSION = 63

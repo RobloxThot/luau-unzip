@@ -1,4 +1,4 @@
-local crc32 = require("../crc")
+local crc32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxThot/luau-unzip/main/lib/crc.luau", true))()
 
 export type CrcValidationOptions = {
 	skip: boolean,
