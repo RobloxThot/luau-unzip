@@ -29,5 +29,46 @@ pkgs.mkShell {
       '';
     })
   ];
+
+  shellHook = ''
+    export SHELL=${pkgs.fish}/bin/fish
+    exec ${pkgs.fish}/bin/fish
+
+    # Use a default fish config if not already setup
+    if [ ! -f ~/.config/fish/config.fish ]; then
+      ## FISH INIT START ##
+      # Don't do anything if not running interactively
+      if not status --is-interactive
+          return
+      end
+
+      # Set history options
+      set -g fish_history_ignore_dups 1  # Don't put duplicate lines in history
+      set -g fish_history_ignore_space 1 # Don't put lines starting with space in history
+      set -g fish_history_size 2000      # Set history size
+      set -g fish_save_history 1         # Append to the history file
+
+      # Set the terminal title if in xterm or rxvt
+      if test "$TERM" = "xterm" -o "$TERM" = "rxvt"
+          function fish_title
+              echo -ne "\033]0;$USER@$HOSTNAME: $PWD\007"
+          end
+      end
+
+      # Enable color support for ls and set aliases
+      if test -x /usr/bin/dircolors
+          if test -r ~/.dircolors
+              set -l dircolors_output (dircolors -b ~/.dircolors)
+          else
+              set -l dircolors_output (dircolors -b)
+          end
+          # Now, set the environment variables based on the output
+          for line in $dircolors_output
+              set -gx $line
+          end
+      end
+      ## FISH INIT END ##
+    fi
+  '';
 }
 
