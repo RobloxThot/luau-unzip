@@ -11,7 +11,8 @@
       devpkgs = import ./dev.nix {
         inherit pkgs;
       };
-    in {
+    in
+    {
       packages.${system}.devShell = devpkgs;
       defaultPackage.${system} = devpkgs;
     };
