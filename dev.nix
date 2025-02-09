@@ -30,6 +30,22 @@ pkgs.mkShell {
         '';
       }
     )
+    (
+      let version = "0.6.0-rc.4"; in
+      pkgs.stdenv.mkDerivation {
+        name = "pesde";
+        version = version;
+        src = pkgs.fetchzip {
+          url = "https://github.com/pesde-pkg/pesde/releases/download/v${version}+registry.0.2.0-rc.1/pesde-${version}-linux-x86_64.zip";
+          sha256 = "sha256-3aD2OGUUV4+ptWLTBHVDug9RDHicSM58YDcXCiYRSyY=";
+        };
+
+        installPhase = ''
+          mkdir -p $out/bin
+          cp pesde $out/bin/
+        '';
+      }
+    )
   ];
 
   shellHook = ''
@@ -71,6 +87,8 @@ pkgs.mkShell {
       end
       ## FISH INIT END ##
     fi
+
+    set PATH "$PATH:$HOME/.pesde/bin"
   '';
 }
 
