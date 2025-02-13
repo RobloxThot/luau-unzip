@@ -52,6 +52,12 @@ print("Total size:", stats.totalSize, "bytes")
 ## MSLV (Minimum Supported Luau Version)
 This library requires at least Luau [0.629](https://github.com/luau-lang/luau/releases/tag/0.629) (specifically requires leading `|`, `buffer` built-in and `idiv` operator support).
 
+## Contributing
+Contributions are heavily welcomed! We use Nix Flakes for management a reproducible development environment. To get started, run `exec nix develop`, after [installing Nix](https://nixos.wiki/wiki/Nix_Installation_Guide). This is recommended for tests to be consistent, since we rely on `InfoZIP` implementations as sanity checks, although different distributions supply differently patched versions of it.
+
+- We utilize [pesde](https://pesde.dev) for package management. Run `pesde install` to install all dependencies. 
+- Before submitting a pull request, make sure you include comprehensive test cases for new features, and make sure all tests pass. Tests can be run with `lune run tests`. Refer to other test suites for examples of how to write your own tests.
+
 ## License
 This project is licensed under the [MIT] license.
 
