@@ -36,8 +36,13 @@ jobs:
       - name: Parse stylua semver range into version
         id: stylua
         run: |
+          #!/bin/bash
+          set -euo pipefail
+
           range="${{ steps.get_semver_range.outputs.value }}"
           echo "version=$(gh api /repos/JohnnyMorganz/StyLua/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT 
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install stylua
         uses: JohnnyMorganz/stylua-action@v4
@@ -78,8 +83,13 @@ jobs:
       - name: Parse luau-lsp semver range into version
         id: luau-lsp
         run: |
+          #!/bin/bash
+          set -euo pipefail
+
           range="${{ steps.get_semver_range.outputs.value }}"
           echo "version=$(gh api /repos/JohnnyMorganz/luau-lsp/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install luau-lsp
         shell: bash
