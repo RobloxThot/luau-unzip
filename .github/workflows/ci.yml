@@ -36,14 +36,14 @@ jobs:
       - name: Parse stylua semver range into version
         id: stylua
         run: |
-          range="${{ steps.get_semver_range.value }}"
+          range="${{ steps.get_semver_range.outputs.value }}"
           echo "version=$(gh api /repos/JohnnyMorganz/StyLua/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT 
 
       - name: Install stylua
         uses: JohnnyMorganz/stylua-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ steps.stylua.version }}
+          version: ${{ steps.stylua.outputs.version }}
           args: --version
 
       - name: Install dependencies
@@ -78,7 +78,7 @@ jobs:
       - name: Parse luau-lsp semver range into version
         id: luau-lsp
         run: |
-          range="${{ steps.get_semver_range.value }}"
+          range="${{ steps.get_semver_range.outputs.value }}"
           echo "version=$(gh api /repos/JohnnyMorganz/luau-lsp/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT
 
       - name: Install luau-lsp
@@ -88,7 +88,7 @@ jobs:
           set -euo pipefail
 
           cd /tmp
-          gh release download --repo JohnnyMorganz/luau-lsp "${{ steps.luau-lsp.version }}" --pattern luau-lsp-linux.zip
+          gh release download --repo JohnnyMorganz/luau-lsp "${{ steps.luau-lsp.outputs.version }}" --pattern luau-lsp-linux.zip
           mkdir -p ~/.local/bin
           unzip luau-lsp-linux.zip -d ~/.local/bin
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
