@@ -92,6 +92,8 @@ jobs:
           mkdir -p ~/.local/bin
           unzip luau-lsp-linux.zip -d ~/.local/bin
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install dependencies
         run: pesde install
