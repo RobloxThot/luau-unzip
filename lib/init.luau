@@ -78,15 +78,15 @@ local ZipEntry = {}
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
 -- stylua: ignore
 type ZipEntryInner = {
-	name: string,              -- File path within ZIP, '/' suffix indicates directory
+    name: string,              -- File path within ZIP, '/' suffix indicates directory
 
-	versionMadeBy: {           -- Version of software and OS that created the ZIP
-		software: string,      -- Software version used to create the ZIP
-		os: MadeByOS,          -- Operating system used to create the ZIP
-	},
+    versionMadeBy: {           -- Version of software and OS that created the ZIP
+        software: string,      -- Software version used to create the ZIP
+        os: MadeByOS,          -- Operating system used to create the ZIP
+    },
 
-	compressedSize: number,    -- Compressed size in bytes
-	size: number,              -- Uncompressed size in bytes
+    compressedSize: number,    -- Compressed size in bytes
+    size: number,              -- Uncompressed size in bytes
     offset: number,            -- Absolute position of local header in ZIP
     timestamp: number,         -- MS-DOS format timestamp
     method: CompressionMethod, -- Method used to compress the file
@@ -100,27 +100,27 @@ type ZipEntryInner = {
 
 -- stylua: ignore
 export type MadeByOS =
-	| "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
-	| "AMIGA"         -- 0x1; Amiga
-	| "VMS"	          -- 0x2; OpenVMS
-	| "UNIX"          -- 0x3; Unix
-	| "VM/CMS"        -- 0x4; VM/CMS
-	| "Atari ST"      -- 0x5; Atari ST
-	| "OS/2"          -- 0x6; OS/2 HPFS
-	| "MAC"           -- 0x7; Macintosh
-	| "Z-System"      -- 0x8; Z-System
-	| "CP/M"          -- 0x9; Original CP/M
-	| "NTFS"          -- 0xa; Windows NTFS
-	| "MVS"           -- 0xb; OS/390 & VM/ESA
-	| "VSE"           -- 0xc; VSE
-	| "Acorn RISCOS"  -- 0xd; Acorn RISCOS
-	| "VFAT"          -- 0xe; VFAT
-	| "Alternate MVS" -- 0xf; Alternate MVS
-	| "BeOS"          -- 0x10; BeOS
-	| "TANDEM"        -- 0x11; Tandem
-	| "OS/400"        -- 0x12; OS/400
-	| "OS/X"          -- 0x13; Darwin
-	| "Unknown"       -- 0x14 - 0xff; Unused
+    | "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
+    | "AMIGA"         -- 0x1; Amiga
+    | "VMS"           -- 0x2; OpenVMS
+    | "UNIX"          -- 0x3; Unix
+    | "VM/CMS"        -- 0x4; VM/CMS
+    | "Atari ST"      -- 0x5; Atari ST
+    | "OS/2"          -- 0x6; OS/2 HPFS
+    | "MAC"           -- 0x7; Macintosh
+    | "Z-System"      -- 0x8; Z-System
+    | "CP/M"          -- 0x9; Original CP/M
+    | "NTFS"          -- 0xa; Windows NTFS
+    | "MVS"           -- 0xb; OS/390 & VM/ESA
+    | "VSE"           -- 0xc; VSE
+    | "Acorn RISCOS"  -- 0xd; Acorn RISCOS
+    | "VFAT"          -- 0xe; VFAT
+    | "Alternate MVS" -- 0xf; Alternate MVS
+    | "BeOS"          -- 0x10; BeOS
+    | "TANDEM"        -- 0x11; Tandem
+    | "OS/400"        -- 0x12; OS/400
+    | "OS/X"          -- 0x13; Darwin
+    | "Unknown"       -- 0x14 - 0xff; Unused
 export type CompressionMethod = "STORE" | "DEFLATE"
 export type ZipEntryProperties = {
 	versionMadeBy: number,
