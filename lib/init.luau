@@ -163,14 +163,19 @@ function ZipEntry.isSymlink(self: ZipEntry): boolean
 end
 
 function ZipEntry.getPath(self: ZipEntry): string
-	local path = self.name
-	local current = self.parent
-
-	while current and current.name ~= "/" do
-		path = current.name .. path
-		current = current.parent
+	if self.name == "/" then
+		return "/"
 	end
 
+	-- Get just the entry name without the path
+	local name = string.match(self.name, "([^/]+)/?$") or self.name
+
+	if not self.parent or self.parent.name == "/" then
+		return self.name
+	end
+
+	-- Combine parent path with entry name
+	local path = string.gsub(self.parent:getPath() .. name, "//+", "/")
 	return path
 end
 
