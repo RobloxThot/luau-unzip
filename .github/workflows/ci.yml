@@ -31,7 +31,7 @@ jobs:
           field: dev_dependencies.stylua.version
   
       - name: Install semver CLI
-        run: sudo apt-get install semver -y
+        run: sudo apt-get update && sudo apt-get install semver -y
         
       - name: Parse stylua semver range into version
         id: stylua
@@ -73,7 +73,7 @@ jobs:
           field: dev_dependencies.luau-lsp.version
   
       - name: Install semver CLI
-        run: sudo apt-get install semver -y
+        run: sudo apt-get update && sudo apt-get install semver -y
         
       - name: Parse luau-lsp semver range into version
         id: luau-lsp
