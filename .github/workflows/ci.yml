@@ -131,4 +131,4 @@ jobs:
         run: pesde install
 
       - name: Run tests
-        run: lune run test
+        run: lune run tests
