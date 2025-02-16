@@ -46,7 +46,7 @@ let
         else if artifactName != null then
           pkgs.fetchzip
             {
-              url = builtins.trace "https://github.com/${name}/releases/download/${version}/${artifactName}" "https://github.com/${name}/releases/download/${version}/${artifactName}";
+              url = "https://github.com/${name}/releases/download/${version}/${artifactName}";
               sha256 = sha256;
             }
         else
