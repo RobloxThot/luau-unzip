@@ -2,6 +2,11 @@ name: CI
 
 on:
   push:
+    paths:
+      - '**/*'
+    paths-ignore:
+      - '**/*.md'
+      - 'examples/**'
   pull_request:
   workflow_dispatch:
 
