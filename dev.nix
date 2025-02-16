@@ -33,40 +33,102 @@ let
       '';
     };
 
-  fromGithubRelease = { name, exeName, version, sha256, url ? null }: 
+  fromGithubRelease = { name, exeName, version, sha256, url ? null, artifactName ? null }:
     pkgs.stdenv.mkDerivation {
       name = "${exeName}-${version}";
-      src = if url != null then
-        pkgs.fetchzip {
-          url = url;
-          sha256 = sha256;
-        }
-      else
-        pkgs.fetchzip {
-          url = "https://github.com/${name}/releases/download/v${version}/${exeName}-${version}-linux-x86_64.zip";
-          sha256 = sha256;
-        };
+      src =
+        if url != null then
+          pkgs.fetchzip
+            {
+              url = url;
+              sha256 = sha256;
+            }
+        else if artifactName != null then
+          pkgs.fetchzip
+            {
+              url = builtins.trace "https://github.com/${name}/releases/download/${version}/${artifactName}" "https://github.com/${name}/releases/download/${version}/${artifactName}";
+              sha256 = sha256;
+            }
+        else
+          throw "Either artifactName or url must be supplied";
 
       installPhase = ''
+        ls -lah
         mkdir -p $out/bin
-        cp ${exeName} $out/bin/
+        mv ${exeName} $out/bin/
       '';
+    };
+
+  getVersion = { exeName, name, pesdePackage ? null }:
+    (
+      let package = if pesdePackage == null then "pesde/${exeName}" else pesdePackage; in pkgs.stdenv.mkDerivation {
+        name = "get-version";
+        src = ./pesde.lock;
+        buildInputs = [ pkgs.jq pkgs.toml2json ];
+        phases = [ "buildPhase" ];
+        buildPhase = ''
+          #!/bin/bash
+          set -euo pipefail
+
+          version=$(toml2json $src | jq -r '.graph."${package}" | to_entries[0].value.pkg_ref.version')
+          if [[ "${exeName}" = "stylua" ]]; then
+            # Special case for stylua which has versions that start with `v`
+            version="v$version"
+          fi
+
+          echo -n "$version" > $out
+        '';
+      }
+    );
+
+  fromPesdeManifest = { name, exeName, artifactName, pesdePackage ? null, sha256 }:
+    let
+      version = builtins.readFile (getVersion { exeName = exeName; name = name; pesdePackage = pesdePackage; });
+    in
+    fromGithubRelease {
+      name = name;
+      exeName = exeName;
+      version = version;
+      sha256 = sha256;
+      artifactName = artifactName;
     };
 
 in
 pkgs.mkShell {
   buildInputs = [
+    # General devtools and test requirements
     pkgs.curl
     pkgs.git
-    pkgs.lune
     (buildDerivation "unzip" "6.0-28" "s9lSnDQ4LMjS5syCmaGFNlBO28KEuRM/++UicEhlBo4=" pkgs.bzip2)
     (buildDerivation "zip" "3.0-14" "0vsh9c5wfbwsx1r1b5mkfxj5vy1xqv0wbj2i93jysyb7x1c3pq8n" pkgs.zlib)
+
+    # Luau tooling
+    pkgs.lune
     (fromGithubRelease {
       name = "pesde-pkg/pesde";
       exeName = "pesde";
-      version = "0.6.0-rc.4+registry.0.2.0-rc.1";
-      sha256 = "sha256-3aD2OGUUV4+ptWLTBHVDug9RDHicSM58YDcXCiYRSyY=";
+      version = "v0.6.0-rc.4+registry.0.2.0-rc.1";
+      artifactName = "pesde-0.6.0-rc.4-linux-x86_64.zip";
+      sha256 = "3aD2OGUUV4+ptWLTBHVDug9RDHicSM58YDcXCiYRSyY=";
+    })
+    (fromPesdeManifest {
+      name = "JohnnyMorganz/luau-lsp";
+      exeName = "luau-lsp";
+      pesdePackage = "pesde/luau_lsp";
+      artifactName = "luau-lsp-linux.zip";
+      sha256 = "mYALjfjY+UifOdX4AlYijweXDlMHUZo7m6hdOT577lw=";
+    })
+    (fromPesdeManifest {
+      name = "JohnnyMorganz/StyLua";
+      exeName = "stylua";
+      artifactName = "stylua-linux-x86_64.zip";
+      sha256 = "nzMJELcyczbCkbWPEAhIqESd90CseTYJs19+KA09OiI=";
     })
   ];
+  
+  shellHook = ''
+    # Add pesde bins dir to path
+    export PATH="$PATH:$HOME/.pesde/bin"
+  '';
 }
 
