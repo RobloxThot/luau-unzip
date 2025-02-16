@@ -15,104 +15,67 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install pesde
-        uses: lumin-org/setup-pesde@v0.4.0
+      
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v29
+      
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
         with:
-          version: v0.6.0-rc.6+registry.0.2.0-rc.2
-          token: ${{ secrets.PESDE_TOKEN }}
-          cache: true 
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+          purge: true
+          purge-prefixes: cache-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
 
-      - name: Extract stylua version in manifest
-        uses: SebRollen/toml-action@v1.2.0
-        id: get_semver_range 
+      - name: Cache pesde data 
+        uses: actions/cache@v4
         with:
-          file: pesde.toml
-          field: dev_dependencies.stylua.version
-  
-      - name: Install semver CLI
-        run: sudo apt-get update && sudo apt-get install node-semver -y
-        
-      - name: Parse stylua semver range into version
-        id: stylua
-        run: |
-          #!/bin/bash
-          set -euo pipefail
-
-          range="${{ steps.get_semver_range.outputs.value }}"
-          echo "version=$(gh api /repos/JohnnyMorganz/StyLua/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT 
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Install stylua
-        uses: JohnnyMorganz/stylua-action@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ steps.stylua.outputs.version }}
-          args: --version
-
+          path: ~/.pesde
+          key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
+      
       - name: Install dependencies
         run: pesde install
 
       - name: Check formatting
-        run: lune run fmt -- --check
+        run: nix develop -c lune run fmt -- --check
 
   typecheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install pesde
-        uses: lumin-org/setup-pesde@v0.4.0
-        with:
-          version: v0.6.0-rc.6+registry.0.2.0-rc.2
-          token: ${{ secrets.PESDE_TOKEN }}
-          cache: true      
       
-      - name: Extract luau-lsp version in manifest
-        uses: SebRollen/toml-action@v1.2.0
-        id: get_semver_range 
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v29
+      
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
         with:
-          file: pesde.toml
-          field: dev_dependencies.luau-lsp.version
-  
-      - name: Install semver CLI
-        run: sudo apt-get update && sudo apt-get install node-semver -y
-        
-      - name: Parse luau-lsp semver range into version
-        id: luau-lsp
-        run: |
-          #!/bin/bash
-          set -euo pipefail
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+          purge: true
+          purge-prefixes: cache-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
 
-          range="${{ steps.get_semver_range.outputs.value }}"
-          echo "version=$(gh api /repos/JohnnyMorganz/luau-lsp/tags --jq '.[] | .name' | xargs semver -r "$range" | tail -n 1)" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Install luau-lsp
-        shell: bash
-        run: |
-          #!/bin/bash
-          set -euo pipefail
-
-          cd /tmp
-          gh release download --repo JohnnyMorganz/luau-lsp "${{ steps.luau-lsp.outputs.version }}" --pattern luau-lsp-linux.zip
-          mkdir -p ~/.local/bin
-          unzip luau-lsp-linux.zip -d ~/.local/bin
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Cache pesde data 
+        uses: actions/cache@v4
+        with:
+          path: ~/.pesde
+          key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
 
       - name: Install dependencies
         run: pesde install
 
       - name: Setup lune typedefs
-        run: lune setup
+        run: nix develop -c lune setup
 
       - name: Typecheck
-        run: lune run typecheck
+        run: nix develop -c lune run typecheck
 
   test:
     runs-on: ubuntu-latest
@@ -120,15 +83,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install pesde
-        uses: lumin-org/setup-pesde@v0.4.0
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v29
+      
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
         with:
-          version: v0.6.0-rc.6+registry.0.2.0-rc.2
-          token: ${{ secrets.PESDE_TOKEN }}
-          cache: true
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+          purge: true
+          purge-prefixes: cache-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+
+      - name: Cache pesde data 
+        uses: actions/cache@v4
+        with:
+          path: ~/.pesde
+          key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
 
       - name: Install dependencies
         run: pesde install
 
       - name: Run tests
-        run: lune run tests
+        run: nix develop -c lune run tests
