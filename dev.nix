@@ -70,7 +70,8 @@ let
           #!/bin/bash
           set -euo pipefail
 
-          version=$(toml2json $src | jq -r '.graph."${package}" | to_entries[0].value.pkg_ref.version')
+          version=$(toml2json $src | jq -r '.graph | with_entries(select(.key | test("^${package}"))) | to_entries[0].key | capture("(@(?<ve
+rsion>[^ ]+))") | .version')
           if [[ "${exeName}" = "stylua" ]]; then
             # Special case for stylua which has versions that start with `v`
             version="v$version"
