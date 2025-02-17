@@ -12,6 +12,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+    actions: write
+
 jobs:
   fmt:
     runs-on: ubuntu-latest
