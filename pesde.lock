@@ -1,5 +1,5 @@
 name = "0x5eal/unzip"
-version = "0.1.0"
+version = "0.1.1"
 target = "luau"
 
 [graph."0x5eal/unzip@0.1.0 luau"]
@@ -104,14 +104,14 @@ resolved_ty = "standard"
 
 [graph."lukadev_0/option@1.2.0 lune".pkg_ref]
 ref_ty = "pesde"
-index_url = "https://github.com/daimond113/pesde-index"
+index_url = "https://github.com/pesde-pkg/index"
 
 [graph."lukadev_0/result@1.2.0 lune"]
 resolved_ty = "standard"
 
 [graph."lukadev_0/result@1.2.0 lune".pkg_ref]
 ref_ty = "pesde"
-index_url = "https://github.com/daimond113/pesde-index"
+index_url = "https://github.com/pesde-pkg/index"
 
 [graph."pesde/luau_lsp@1.39.2 lune"]
 direct = ["luau-lsp", { name = "pesde/luau_lsp", version = "=1.39.2", index = "default", target = "lune" }, "dev"]
@@ -161,7 +161,7 @@ resolved_ty = "standard"
 
 [graph."pesde/toolchainlib@0.1.12 lune".pkg_ref]
 ref_ty = "pesde"
-index_url = "https://github.com/daimond113/pesde-index"
+index_url = "https://github.com/pesde-pkg/index"
 
 [graph."pesde/toolchainlib@0.1.12 lune".pkg_ref.dependencies]
 dirs = [{ name = "jiwonz/dirs", version = "^0.3.0", index = "https://github.com/pesde-pkg/index" }, "standard"]
