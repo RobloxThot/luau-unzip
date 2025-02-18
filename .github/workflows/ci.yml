@@ -43,7 +43,7 @@ jobs:
           key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
       
       - name: Install dependencies
-        run: nix develop -c pesde install
+        run: nix develop -c pesde install --locked
 
       - name: Check formatting
         run: nix develop -c lune run fmt -- --check
@@ -75,7 +75,7 @@ jobs:
           key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
 
       - name: Install dependencies
-        run: nix develop -c pesde install
+        run: nix develop -c pesde install --locked
 
       - name: Setup lune typedefs
         run: nix develop -c lune setup
@@ -110,7 +110,7 @@ jobs:
           key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
 
       - name: Install dependencies
-        run: nix develop -c pesde install
+        run: nix develop -c pesde install --locked
 
       - name: Run tests
         run: nix develop -c lune run tests
