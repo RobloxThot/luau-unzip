@@ -125,7 +125,7 @@ pkgs.mkShell {
       sha256 = "nzMJELcyczbCkbWPEAhIqESd90CseTYJs19+KA09OiI=";
     })
   ];
-  
+
   shellHook = ''
     # Add pesde bins dir to path
     export PATH="$PATH:$HOME/.pesde/bin"
