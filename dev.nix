@@ -107,9 +107,9 @@ pkgs.mkShell {
     (fromGithubRelease {
       name = "pesde-pkg/pesde";
       exeName = "pesde";
-      version = "v0.6.0-rc.4+registry.0.2.0-rc.1";
-      artifactName = "pesde-0.6.0-rc.4-linux-x86_64.zip";
-      sha256 = "3aD2OGUUV4+ptWLTBHVDug9RDHicSM58YDcXCiYRSyY=";
+      version = "v0.6.0-rc.8+registry.0.2.0-rc.3";
+      artifactName = "pesde-0.6.0-rc.8-linux-x86_64.zip";
+      sha256 = "xjY8yPTAD32xeQokHDSWBOiGALLxPOU89Xlxi2Jdnno=";
     })
     (fromPesdeManifest {
       name = "JohnnyMorganz/luau-lsp";
