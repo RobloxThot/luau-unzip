@@ -9,7 +9,7 @@ local MAX_SUPPORTED_PKZIP_VERSION = 63
 local SIGNATURES = table.freeze({
 	-- Marks the beginning of each file in the ZIP
 	LOCAL_FILE = 0x04034b50,
-	-- Marks the start of an data descriptor
+	-- Marks the start of a data descriptor
 	DATA_DESCRIPTOR = 0x08074b50,
 	-- Marks entries in the central directory
 	CENTRAL_DIR = 0x02014b50,
@@ -294,7 +294,7 @@ end
 
 --[=[
     @within ZipEntry
-    @method getParent
+    @method compressionEfficiency 
 
     Calculates the compression efficiency of the entry, or `nil` if the entry is a directory.
 
@@ -766,7 +766,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 			if leading == SIGNATURES.DATA_DESCRIPTOR then
 				-- If we find a data descriptor signature, that must mean
-				-- the current offset points is the start of the descriptor
+				-- the current offset points to the start of the descriptor
 				break
 			end
 
@@ -896,7 +896,7 @@ end
     @within ZipReader
     @method walk
 
-    Recursively alks through the zip file, calling the provided callback for each entry
+    Recursively walks through the ZIP file, calling the provided callback for each entry
     with the current entry and its depth.
 
     @param callback (entry: ZipEntry, depth: number) -> () -- The function to call for each entry
@@ -920,9 +920,9 @@ end
     @interface ZipStatistics
     @within ZipReader
 
-    @field fileCount number -- The number of files in the zip
-    @field dirCount number -- The number of directories in the zip
-    @field totalSize number -- The total size of all files in the zip
+    @field fileCount number -- The number of files in the ZIP 
+    @field dirCount number -- The number of directories in the ZIP 
+    @field totalSize number -- The total size of all files in the ZIP 
 ]=]
 export type ZipStatistics = { fileCount: number, dirCount: number, totalSize: number }
 
