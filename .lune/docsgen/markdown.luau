@@ -1,6 +1,7 @@
 local fs = require("@lune/fs")
 
 local moonwave = require("./moonwave")
+local logger = require("./log")
 
 local function writeSectionHeader(buf: string, title: string)
 	buf ..= `## {title}\n`
@@ -95,8 +96,10 @@ local function writeType(buf: string, name: string, desc: string, type: string)
 end
 
 local function writeMarkdown(path: string, items: { moonwave.Item })
-	local buf = ""
+	local start = os.clock()
+    local buf = ""
 	for _, item in items do
+        logger.log("info", "Generating docs for", item.name)
 		buf = writeClass(buf, item.name, item.desc)
 
 		local props: { moonwave.Property } = {}
@@ -166,6 +169,8 @@ local function writeMarkdown(path: string, items: { moonwave.Item })
 		buf = writeRef(buf, item.name)
 	end
 
+    logger.log("info", string.format("Generated docs in %.2fms", (os.clock() - start) * 1000))
+    logger.log("info", "Writing to", path)
 	fs.writeFile(path, buf)
 end
 
