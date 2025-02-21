@@ -10,6 +10,7 @@ includes = [
 	"pesde.toml",
 	"lib/**/*.luau",
 	"!tests/**/*",
+  "docs/**/*.md"
 ]
 
 [engines]
