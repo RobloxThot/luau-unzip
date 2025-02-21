@@ -63,11 +63,10 @@ ZipEntry:isSymlink(): boolean
 Resolves the path of the entry based on its relationship with other entries. It is recommended to use this 
 method instead of accessing the `name` property directly, although they should be equivalent.
 
-:::warning
-Never use this method when extracting files from the ZIP, since it can contain absolute paths
-(say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
-causing unintended overwrites of files.
-:::
+> [!WARNING]
+> Never use this method when extracting files from the ZIP, since it can contain absolute paths
+> (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
+> causing unintended overwrites of files.
 ```luau
 ZipEntry:getPath(): string
 
