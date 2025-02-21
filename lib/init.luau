@@ -168,6 +168,14 @@ export type CompressionMethod = "STORE" | "DEFLATE"
 
     A set of properties that describe a ZIP entry. Used internally for construction of 
     [ZipEntry] objects.
+
+    @field versionMadeBy number -- Version of software and OS that created the ZIP
+    @field compressedSize number -- Compressed size in bytes
+    @field size number -- Uncompressed size in bytes
+    @field attributes number -- File attributes
+    @field timestamp number -- MS-DOS format timestamp
+    @field method CompressionMethod? -- Method used
+    @field crc number -- CRC32 checksum of the uncompressed data
 ]=]
 type ZipEntryProperties = {
 	versionMadeBy: number,
