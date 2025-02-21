@@ -9,6 +9,7 @@ on:
       - 'lib/init.luau'
       - '.lune/docsgen/**/*.luau'
       - '**/.nix'
+      - '.github/workflows/doc.yml'
   workflow_dispatch:
 
 permissions:
