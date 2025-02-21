@@ -111,6 +111,13 @@ pkgs.mkShell {
       artifactName = "pesde-0.6.0-rc.8-linux-x86_64.zip";
       sha256 = "xjY8yPTAD32xeQokHDSWBOiGALLxPOU89Xlxi2Jdnno=";
     })
+    (fromGithubRelease {
+      name = "evaera/moonwave";
+      exeName = "moonwave-extractor";
+      version = "v1.2.1";
+      artifactName = "moonwave-extractor-v1.2.1-linux.zip";
+      sha256 = "UPZ5ZIazNNBcqny7srFIkHqX0t09r0F1M9q4KyjLNgQ=";
+    })
     (fromPesdeManifest {
       name = "JohnnyMorganz/luau-lsp";
       exeName = "luau-lsp";

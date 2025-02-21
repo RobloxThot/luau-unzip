@@ -168,6 +168,14 @@ export type CompressionMethod = "STORE" | "DEFLATE"
 
     A set of properties that describe a ZIP entry. Used internally for construction of 
     [ZipEntry] objects.
+
+    @field versionMadeBy number -- Version of software and OS that created the ZIP
+    @field compressedSize number -- Compressed size in bytes
+    @field size number -- Uncompressed size in bytes
+    @field attributes number -- File attributes
+    @field timestamp number -- MS-DOS format timestamp
+    @field method CompressionMethod? -- Method used
+    @field crc number -- CRC32 checksum of the uncompressed data
 ]=]
 type ZipEntryProperties = {
 	versionMadeBy: number,
@@ -234,11 +242,10 @@ end
     Resolves the path of the entry based on its relationship with other entries. It is recommended to use this 
     method instead of accessing the `name` property directly, although they should be equivalent.
 
-    :::warning
-    Never use this method when extracting files from the ZIP, since it can contain absolute paths
-    (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
-    causing unintended overwrites of files.
-    :::
+    > [!WARNING]
+    > Never use this method when extracting files from the ZIP, since it can contain absolute paths
+    > (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
+    > causing unintended overwrites of files.
 
     @return string -- The path of the entry
 ]=]
