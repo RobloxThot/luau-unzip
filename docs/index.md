@@ -36,7 +36,7 @@ export type ZipEntry = {
 ## API
 ### `new`
 > [!IMPORTANT]
-> This is a private API. It may be exported publically, but try to avoid
+> This is a private API. It may be exported publicly, but try to avoid
 > using this API, since it can have breaking changes at any time without
 > warning.
 
@@ -137,7 +137,7 @@ export type CompressionMethod = "STORE" | "DEFLATE"
 [CompressionMethod]: #CompressionMethod
 ### `ZipEntryProperties`
 > [!IMPORTANT]
-> This is a private type. It may be exported publically, but try to avoid
+> This is a private type. It may be exported publicly, but try to avoid
 > using it, since its definition can have a breaking change at any time
 > without warning.
 
@@ -212,7 +212,7 @@ ZipReader.new(
 [ZipReader.new]: #new
 ### `parseCentralDirectory`
 > [!IMPORTANT]
-> This is a private API. It may be exported publically, but try to avoid
+> This is a private API. It may be exported publicly, but try to avoid
 > using this API, since it can have breaking changes at any time without
 > warning.
 
@@ -227,7 +227,7 @@ ZipReader:parseCentralDirectory()
 [ZipReader:parseCentralDirectory]: #parseCentralDirectory
 ### `buildDirectoryTree`
 > [!IMPORTANT]
-> This is a private API. It may be exported publically, but try to avoid
+> This is a private API. It may be exported publicly, but try to avoid
 > using this API, since it can have breaking changes at any time without
 > warning.
 
