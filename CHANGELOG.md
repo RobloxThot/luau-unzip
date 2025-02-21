@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 ### Added 
-- Documentation comments powered by [moonwave](https://github.com/evaera/moonwave)
+- Added doc comments powered by [moonwave](https://github.com/evaera/moonwave)
+- Added markdown doc generator lune script and configured pesde docs
 ### Fixed
 - Fixed incorrect type signatures for some functions
 ### Changed
