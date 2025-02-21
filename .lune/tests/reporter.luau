@@ -9,28 +9,18 @@ local watch = require("../util/channel")
 
 local STYLE = table.freeze({
 	suite = function(name: string)
-		return `{stdio.style("bold")}{stdio.color("purple")}SUITE{stdio.style(
-			"reset"
-		)} {name}`
+		return `{stdio.style("bold")}{stdio.color("purple")}SUITE{stdio.style("reset")} {name}`
 	end,
 
-	report = function(
-		name: string,
-		state: "success" | "error" | "skip",
-		elapsed: number
-	)
+	report = function(name: string, state: "success" | "error" | "skip", elapsed: number)
 		local state_color: stdio.Color = if state == "success"
 			then "green"
 			elseif state == "error" then "red"
 			elseif state == "skip" then "yellow"
 			else error("Invalid test state")
-		return `    {stdio.style("bold")}{stdio.color(state_color)}{if state
-				== "skip"
-			then "SKIP"
-			else "TEST"}{stdio.style("reset")} {name} [{stdio.style("dim")}{string.format(
-			"%.2fms",
-			elapsed
-		)}{stdio.style("reset")}]`
+		return `    {stdio.style("bold")}{stdio.color(state_color)}{if state == "skip" then "SKIP" else "TEST"}{stdio.style(
+			"reset"
+		)} {name} [{stdio.style("dim")}{string.format("%.2fms", elapsed)}{stdio.style("reset")}]`
 	end,
 })
 

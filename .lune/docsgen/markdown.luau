@@ -97,9 +97,9 @@ end
 
 local function writeMarkdown(path: string, items: { moonwave.Item })
 	local start = os.clock()
-    local buf = ""
+	local buf = ""
 	for _, item in items do
-        logger.log("info", "Generating docs for", item.name)
+		logger.log("info", "Generating docs for", item.name)
 		buf = writeClass(buf, item.name, item.desc)
 
 		local props: { moonwave.Property } = {}
@@ -147,12 +147,12 @@ local function writeMarkdown(path: string, items: { moonwave.Item })
 			end
 
 			buf ..= `### \`{type.name}\`\n`
-            if type.private then
-                buf ..= `> [!IMPORTANT]\n`
-                buf ..= `> This is a private type. It may be exported publicly, but try to avoid\n`
-                buf ..= `> using it, since its definition can have a breaking change at any time\n`
-                buf ..= `> without warning.\n\n`
-            end
+			if type.private then
+				buf ..= `> [!IMPORTANT]\n`
+				buf ..= `> This is a private type. It may be exported publicly, but try to avoid\n`
+				buf ..= `> using it, since its definition can have a breaking change at any time\n`
+				buf ..= `> without warning.\n\n`
+			end
 			buf ..= `{type.desc}\n`
 			if type.lua_type ~= nil then
 				buf = writeType(buf, type.name, type.desc, type.lua_type)
@@ -169,8 +169,8 @@ local function writeMarkdown(path: string, items: { moonwave.Item })
 		buf = writeRef(buf, item.name)
 	end
 
-    logger.log("info", string.format("Generated docs in %.2fms", (os.clock() - start) * 1000))
-    logger.log("info", "Writing to", path)
+	logger.log("info", string.format("Generated docs in %.2fms", (os.clock() - start) * 1000))
+	logger.log("info", "Writing to", path)
 	fs.writeFile(path, buf)
 end
 

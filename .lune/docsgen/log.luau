@@ -8,17 +8,17 @@ local STYLE_ERROR = base .. `{stdio.color("red")}error{stdio.color("reset")}:`
 
 export type LogType = "info" | "warn" | "error"
 local styleMappings: { [LogType]: string } = {
-  info = STYLE_INFO,
-  warn = STYLE_WARN,
-  error = STYLE_ERROR,
+	info = STYLE_INFO,
+	warn = STYLE_WARN,
+	error = STYLE_ERROR,
 }
 
 return {
-  styles = styleMappings,
-  log = function<T...>(type: LogType, ...: T...): ()
-    local writer: (string) -> () = if type == "info" then stdio.write else stdio.ewrite
-    local fmtMsg = stdio.format(styleMappings[type], ...) 
+	styles = styleMappings,
+	log = function<T...>(type: LogType, ...: T...): ()
+		local writer: (string) -> () = if type == "info" then stdio.write else stdio.ewrite
+		local fmtMsg = stdio.format(styleMappings[type], ...)
 
-    return writer(fmtMsg .. "\n")
-  end
+		return writer(fmtMsg .. "\n")
+	end,
 }
