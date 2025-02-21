@@ -53,7 +53,7 @@ local function writeFunction(
 
 	if private then
 		buf ..= `> [!IMPORTANT]\n`
-		buf ..= `> This is a private API. It may be exported publically, but try to avoid\n`
+		buf ..= `> This is a private API. It may be exported publicly, but try to avoid\n`
 		buf ..= `> using this API, since it can have breaking changes at any time without\n`
 		buf ..= `> warning.\n\n`
 	end
@@ -149,7 +149,7 @@ local function writeMarkdown(path: string, items: { moonwave.Item })
 			buf ..= `### \`{type.name}\`\n`
             if type.private then
                 buf ..= `> [!IMPORTANT]\n`
-                buf ..= `> This is a private type. It may be exported publically, but try to avoid\n`
+                buf ..= `> This is a private type. It may be exported publicly, but try to avoid\n`
                 buf ..= `> using it, since its definition can have a breaking change at any time\n`
                 buf ..= `> without warning.\n\n`
             end
