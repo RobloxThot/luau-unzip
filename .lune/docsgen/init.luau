@@ -1,3 +1,5 @@
+--> Generate markdown documentation from moonwave comments
+
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
