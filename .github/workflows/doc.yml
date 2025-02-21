@@ -1,0 +1,56 @@
+name: Update API reference docs
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lib/init.luau'
+      - '.lune/docsgen/**/*.luau'
+      - '**/.nix'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install nix
+        uses: nixbuild/nix-quick-install-action@v29
+      
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 5368709000 
+          purge: true
+          purge-prefixes: cache-${{ runner.os }}-
+          purge-created: 0
+          purge-primary-key: never
+
+      - name: Cache pesde data 
+        uses: actions/cache@v4
+        with:
+          path: ~/.pesde
+          key: pesde-${{ runner.os }}-${{ hashFiles('pesde.toml') }}
+      
+      - name: Install dependencies
+        run: nix develop -c pesde install --locked
+
+      - name: Update markdown API reference docs
+        run: nix develop -c lune run docsgen
+
+      - name: Commit & push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: update refs for https://github.com/0x5eal/luau-unzip/commit/${{ github.event.client_payload.sha }}" && \
+            git push || echo "warn: no changes to commit"
