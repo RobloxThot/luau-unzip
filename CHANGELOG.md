@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed incorrect type signatures for some functions
 ### Changed
 - Applied `stylua` formatter on code
+- Bumped and pinned pesde version to v0.6.0 
 
 ## [0.1.1] - 2025-02-18
 ### Added
