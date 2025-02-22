@@ -107,9 +107,9 @@ pkgs.mkShell {
     (fromGithubRelease {
       name = "pesde-pkg/pesde";
       exeName = "pesde";
-      version = "v0.6.0-rc.8+registry.0.2.0-rc.3";
-      artifactName = "pesde-0.6.0-rc.8-linux-x86_64.zip";
-      sha256 = "xjY8yPTAD32xeQokHDSWBOiGALLxPOU89Xlxi2Jdnno=";
+      version = "v0.6.0+registry.0.2.0";
+      artifactName = "pesde-0.6.0-linux-x86_64.zip";
+      sha256 = "o93kqg7ykIL9bJjTPdGxmzd1xqwfCLjiGj26xF+I+ho=";
     })
     (fromGithubRelease {
       name = "evaera/moonwave";
