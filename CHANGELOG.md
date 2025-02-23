@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.2] - 2025-02-23
 ### Added 
 - Added doc comments powered by [moonwave](https://github.com/evaera/moonwave)
 - Added markdown doc generator lune script and configured pesde docs
@@ -90,6 +92,7 @@ assert(targetContents == followedTargetContents, "Symlink must lead to the targe
 - Initial library release :tada:
 
 [unreleased]: https://github.com/0x5eal/luau-unzip/commits/HEAD
+[0.1.2]: https://pesde.dev/packages/0x5eal/unzip/0.1.2/any
 [0.1.1]: https://pesde.dev/packages/0x5eal/unzip/0.1.1/any
 [0.1.0]: https://pesde.dev/packages/0x5eal/unzip/0.1.0/any
 [0.0.1]: https://pesde.dev/packages/0x5eal/unzip/0.0.1/any
