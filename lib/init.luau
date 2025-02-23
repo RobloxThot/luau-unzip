@@ -565,7 +565,7 @@ end
 function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	local eocdPos = self:findEocdPosition()
 	local record = self:parseEocdRecord(eocdPos)
-	
+
 	-- Track actual entries found
 	local entriesFound = 0
 	local pos = record.cdOffset
