@@ -66,5 +66,17 @@ return function(test: typeof(frktest.test))
 				return zip:extractDirectory("/", { type = "text" })
 			end)
 		end)
+
+		test.case("Efficiently handles ZIP with max length comment", function()
+			local data = fs.readFile("tests/data/max_comment_size.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			local unzipResult = process.spawn("unzip", { "-z", "tests/data/max_comment_size.zip" })
+			assert(unzipResult.ok)
+
+			print(#unzipResult.stdout, #zip.comment)
+			-- Check that the comment is the same as the one in the ZIP file (only compare hashes)
+			check.equal(serde.hash("blake3", unzipResult.stdout), serde.hash("blake3", zip.comment))
+		end)
 	end)
 end

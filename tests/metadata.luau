@@ -17,6 +17,7 @@ local FALLIBLES = {
 	"misaligned_comment.zip",
 	"comment_garbage.zip",
 	"chinese.zip", -- FIXME: Support encoding other than UTF-8 and ASCII using OS APIs after FFI
+	"max_comment_size.zip", -- NOTE: We test for this in the edge cases suite
 }
 
 local METHOD_NAME_TRANSFORMATIONS: { [string]: unzip.CompressionMethod } = {
