@@ -75,7 +75,7 @@ return function(test: typeof(frktest.test))
 			assert(unzipResult.ok)
 
 			local commentData = assert(string.match(unzipResult.stdout, "\n(.*)\n"))
-			
+
 			-- Check that the comment is the same as the one in the ZIP file (only compare hashes)
 			check.equal(serde.hash("blake3", commentData), serde.hash("blake3", zip.comment))
 		end)
