@@ -453,7 +453,7 @@ function ZipReader.findEocdPosition(self: ZipReader): number
 	local bufSize = buffer.len(self.data)
 
 	-- Start from the minimum possible position of EoCD (22 bytes from end)
-	local position = math.max(0, bufSize - (22 + 65535) --[[ max comment size: 64 KiB ]])
+	local position = math.max(0, bufSize - (22 + 65578) --[[ max comment size: 64 KB ]])
 	local searchBuf = buffer.create(BUFFER_SIZE)
 
 	while position < bufSize do
