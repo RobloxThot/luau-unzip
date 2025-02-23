@@ -75,29 +75,29 @@ local MADE_BY_OS_LOOKUP: { [number]: MadeByOS } = {
 }
 
 --[=[
-    @class ZipEntry
-    
-    A single entry (a file or a directory) in a ZIP file, and its properties.
+	@class ZipEntry
+	
+	A single entry (a file or a directory) in a ZIP file, and its properties.
 ]=]
 local ZipEntry = {}
 
 --[=[
-    @interface ZipEntry
-    @within ZipEntry
+	@interface ZipEntry
+	@within ZipEntry
 
-    @field name string -- File path within ZIP, '/' suffix indicates directory
-    @field versionMadeBy { software: string, os: MadeByOS } -- Version of software and OS that created the ZIP
-    @field compressedSize number -- Compressed size in bytes
-    @field size number -- Uncompressed size in bytes
-    @field offset number -- Absolute position of local header in ZIP
-    @field timestamp number -- MS-DOS format timestamp
-    @field method CompressionMethod -- Method used to compress the file
-    @field crc number -- CRC32 checksum of the uncompressed data
-    @field isDirectory boolean -- Whether the entry is a directory or not
-    @field isText boolean -- Whether the entry is plain ASCII text or binary
-    @field attributes number -- File attributes
-    @field parent ZipEntry? -- Parent directory entry, `nil` if entry is root
-    @field children { ZipEntry } -- Children of the entry, if it was a directory, empty array for files
+	@field name string -- File path within ZIP, '/' suffix indicates directory
+	@field versionMadeBy { software: string, os: MadeByOS } -- Version of software and OS that created the ZIP
+	@field compressedSize number -- Compressed size in bytes
+	@field size number -- Uncompressed size in bytes
+	@field offset number -- Absolute position of local header in ZIP
+	@field timestamp number -- MS-DOS format timestamp
+	@field method CompressionMethod -- Method used to compress the file
+	@field crc number -- CRC32 checksum of the uncompressed data
+	@field isDirectory boolean -- Whether the entry is a directory or not
+	@field isText boolean -- Whether the entry is plain ASCII text or binary
+	@field attributes number -- File attributes
+	@field parent ZipEntry? -- Parent directory entry, `nil` if entry is root
+	@field children { ZipEntry } -- Children of the entry, if it was a directory, empty array for files
 ]=]
 export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
 type ZipEntryInner = {
@@ -123,59 +123,59 @@ type ZipEntryInner = {
 
 -- stylua: ignore
 --[=[
-    @within ZipEntry	
-    @type MadeByOS "FAT" | "AMIGA" | "VMS" | "UNIX" | "VM/CMS" | "Atari ST" | "OS/2" | "MAC" | "Z-System" | "CP/M" | "NTFS" | "MVS" | "VSE" | "Acorn RISCOS" | "VFAT" | "Alternate MVS" | "BeOS" | "TANDEM" | "OS/400" | "OS/X" | "Unknown"     
+	@within ZipEntry	
+	@type MadeByOS "FAT" | "AMIGA" | "VMS" | "UNIX" | "VM/CMS" | "Atari ST" | "OS/2" | "MAC" | "Z-System" | "CP/M" | "NTFS" | "MVS" | "VSE" | "Acorn RISCOS" | "VFAT" | "Alternate MVS" | "BeOS" | "TANDEM" | "OS/400" | "OS/X" | "Unknown"     
 
-    The OS that created the ZIP.
+	The OS that created the ZIP.
 ]=]
 export type MadeByOS =
-    | "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
-    | "AMIGA"         -- 0x1; Amiga
-    | "VMS"           -- 0x2; OpenVMS
-    | "UNIX"          -- 0x3; Unix
-    | "VM/CMS"        -- 0x4; VM/CMS
-    | "Atari ST"      -- 0x5; Atari ST
-    | "OS/2"          -- 0x6; OS/2 HPFS
-    | "MAC"           -- 0x7; Macintosh
-    | "Z-System"      -- 0x8; Z-System
-    | "CP/M"          -- 0x9; Original CP/M
-    | "NTFS"          -- 0xa; Windows NTFS
-    | "MVS"           -- 0xb; OS/390 & VM/ESA
-    | "VSE"           -- 0xc; VSE
-    | "Acorn RISCOS"  -- 0xd; Acorn RISCOS
-    | "VFAT"          -- 0xe; VFAT
-    | "Alternate MVS" -- 0xf; Alternate MVS
-    | "BeOS"          -- 0x10; BeOS
-    | "TANDEM"        -- 0x11; Tandem
-    | "OS/400"        -- 0x12; OS/400
-    | "OS/X"          -- 0x13; Darwin
-    | "Unknown"       -- 0x14 - 0xff; Unused
+	| "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
+	| "AMIGA"         -- 0x1; Amiga
+	| "VMS"           -- 0x2; OpenVMS
+	| "UNIX"          -- 0x3; Unix
+	| "VM/CMS"        -- 0x4; VM/CMS
+	| "Atari ST"      -- 0x5; Atari ST
+	| "OS/2"          -- 0x6; OS/2 HPFS
+	| "MAC"           -- 0x7; Macintosh
+	| "Z-System"      -- 0x8; Z-System
+	| "CP/M"          -- 0x9; Original CP/M
+	| "NTFS"          -- 0xa; Windows NTFS
+	| "MVS"           -- 0xb; OS/390 & VM/ESA
+	| "VSE"           -- 0xc; VSE
+	| "Acorn RISCOS"  -- 0xd; Acorn RISCOS
+	| "VFAT"          -- 0xe; VFAT
+	| "Alternate MVS" -- 0xf; Alternate MVS
+	| "BeOS"          -- 0x10; BeOS
+	| "TANDEM"        -- 0x11; Tandem
+	| "OS/400"        -- 0x12; OS/400
+	| "OS/X"          -- 0x13; Darwin
+	| "Unknown"       -- 0x14 - 0xff; Unused
 
 --[=[
-    @within ZipEntry
-    @type CompressionMethod "STORE" | "DEFLATE"
+	@within ZipEntry
+	@type CompressionMethod "STORE" | "DEFLATE"
 
-    The method used to compress the file:
-    - `STORE` - No compression
-    - `DEFLATE` - Compressed raw deflate chunks
+	The method used to compress the file:
+	- `STORE` - No compression
+	- `DEFLATE` - Compressed raw deflate chunks
 ]=]
 export type CompressionMethod = "STORE" | "DEFLATE"
 
 --[=[
-    @interface ZipEntryProperties
-    @within ZipEntry
-    @private
+	@interface ZipEntryProperties
+	@within ZipEntry
+	@private
 
-    A set of properties that describe a ZIP entry. Used internally for construction of 
-    [ZipEntry] objects.
+	A set of properties that describe a ZIP entry. Used internally for construction of 
+	[ZipEntry] objects.
 
-    @field versionMadeBy number -- Version of software and OS that created the ZIP
-    @field compressedSize number -- Compressed size in bytes
-    @field size number -- Uncompressed size in bytes
-    @field attributes number -- File attributes
-    @field timestamp number -- MS-DOS format timestamp
-    @field method CompressionMethod? -- Method used
-    @field crc number -- CRC32 checksum of the uncompressed data
+	@field versionMadeBy number -- Version of software and OS that created the ZIP
+	@field compressedSize number -- Compressed size in bytes
+	@field size number -- Uncompressed size in bytes
+	@field attributes number -- File attributes
+	@field timestamp number -- MS-DOS format timestamp
+	@field method CompressionMethod? -- Method used
+	@field crc number -- CRC32 checksum of the uncompressed data
 ]=]
 type ZipEntryProperties = {
 	versionMadeBy: number,
@@ -188,14 +188,14 @@ type ZipEntryProperties = {
 }
 
 --[=[
-    @within ZipEntry
-    @function new
-    @private
+	@within ZipEntry
+	@function new
+	@private
 
-    @param offset number -- Offset of the entry in the ZIP file
-    @param name string -- File path within ZIP, '/' suffix indicates directory
-    @param properties ZipEntryProperties -- Properties of the entry
-    @return ZipEntry -- The constructed entry
+	@param offset number -- Offset of the entry in the ZIP file
+	@param name string -- File path within ZIP, '/' suffix indicates directory
+	@param properties ZipEntryProperties -- Properties of the entry
+	@return ZipEntry -- The constructed entry
 ]=]
 function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperties): ZipEntry
 	local versionMadeByOS = bit32.rshift(properties.versionMadeBy, 8)
@@ -224,30 +224,30 @@ function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperti
 end
 
 --[=[
-    @within ZipEntry
-    @method isSymlink
+	@within ZipEntry
+	@method isSymlink
 
-    Returns whether the entry is a symlink.
+	Returns whether the entry is a symlink.
 
-    @return boolean
+	@return boolean
 ]=]
 function ZipEntry.isSymlink(self: ZipEntry): boolean
 	return bit32.band(self.attributes, 0xA0000000) == 0xA0000000
 end
 
 --[=[
-    @within ZipEntry
-    @method getPath
+	@within ZipEntry
+	@method getPath
 
-    Resolves the path of the entry based on its relationship with other entries. It is recommended to use this 
-    method instead of accessing the `name` property directly, although they should be equivalent.
+	Resolves the path of the entry based on its relationship with other entries. It is recommended to use this 
+	method instead of accessing the `name` property directly, although they should be equivalent.
 
-    > [!WARNING]
-    > Never use this method when extracting files from the ZIP, since it can contain absolute paths
-    > (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
-    > causing unintended overwrites of files.
+	> [!WARNING]
+	> Never use this method when extracting files from the ZIP, since it can contain absolute paths
+	> (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
+	> causing unintended overwrites of files.
 
-    @return string -- The path of the entry
+	@return string -- The path of the entry
 ]=]
 function ZipEntry.getPath(self: ZipEntry): string
 	if self.name == "/" then
@@ -267,13 +267,13 @@ function ZipEntry.getPath(self: ZipEntry): string
 end
 
 --[=[
-    @within ZipEntry
-    @method getSafePath
+	@within ZipEntry
+	@method getSafePath
 
-    Resolves the path of the entry based on its relationship with other entries and returns it
-    only if it is safe to use for extraction, otherwise returns `nil`.
+	Resolves the path of the entry based on its relationship with other entries and returns it
+	only if it is safe to use for extraction, otherwise returns `nil`.
 
-    @return string? -- Optional path of the entry if it was safe
+	@return string? -- Optional path of the entry if it was safe
 ]=]
 function ZipEntry.getSafePath(self: ZipEntry): string?
 	local pathStr = self:getPath()
@@ -286,13 +286,13 @@ function ZipEntry.getSafePath(self: ZipEntry): string?
 end
 
 --[=[
-    @within ZipEntry
-    @method sanitizePath
+	@within ZipEntry
+	@method sanitizePath
 
-    Sanitizes the path of the entry, potentially losing information, but ensuring the path is
-    safe to use for extraction.
+	Sanitizes the path of the entry, potentially losing information, but ensuring the path is
+	safe to use for extraction.
 
-    @return string -- The sanitized path of the entry
+	@return string -- The sanitized path of the entry
 ]=]
 function ZipEntry.sanitizePath(self: ZipEntry): string
 	local pathStr = self:getPath()
@@ -300,14 +300,14 @@ function ZipEntry.sanitizePath(self: ZipEntry): string
 end
 
 --[=[
-    @within ZipEntry
-    @method compressionEfficiency 
+	@within ZipEntry
+	@method compressionEfficiency 
 
-    Calculates the compression efficiency of the entry, or `nil` if the entry is a directory.
+	Calculates the compression efficiency of the entry, or `nil` if the entry is a directory.
 
-    Uses the formula: `round((1 - compressedSize / size) * 100)` and outputs a percentage.
+	Uses the formula: `round((1 - compressedSize / size) * 100)` and outputs a percentage.
 
-    @return number? -- Optional compression efficiency of the entry
+	@return number? -- Optional compression efficiency of the entry
 ]=]
 function ZipEntry.compressionEfficiency(self: ZipEntry): number?
 	if self.size == 0 or self.compressedSize == 0 then
@@ -319,35 +319,35 @@ function ZipEntry.compressionEfficiency(self: ZipEntry): number?
 end
 
 --[=[
-    @within ZipEntry
-    @method isFile
+	@within ZipEntry
+	@method isFile
 
-    Returns whether the entry is a file, i.e., not a directory or symlink.
+	Returns whether the entry is a file, i.e., not a directory or symlink.
 
-    @return boolean -- Whether the entry is a file
+	@return boolean -- Whether the entry is a file
 ]=]
 function ZipEntry.isFile(self: ZipEntry): boolean
 	return not (self.isDirectory and self:isSymlink())
 end
 
 --[=[
-    @within ZipEntry
-    @interface UnixMode
+	@within ZipEntry
+	@interface UnixMode
 
-    A object representation of the UNIX mode.
+	A object representation of the UNIX mode.
 
-    @field perms string -- The permission octal
-    @field typeFlags string -- The type flags octal
+	@field perms string -- The permission octal
+	@field typeFlags string -- The type flags octal
 ]=]
 export type UnixMode = { perms: string, typeFlags: string }
 
 --[=[
-    @within ZipEntry
-    @method unixMode
+	@within ZipEntry
+	@method unixMode
 
-    Parses the entry's attributes to extract a UNIX mode, represented as a [UnixMode].
+	Parses the entry's attributes to extract a UNIX mode, represented as a [UnixMode].
 
-    @return UnixMode? -- The UNIX mode of the entry, or `nil` if the entry is not a UNIX file
+	@return UnixMode? -- The UNIX mode of the entry, or `nil` if the entry is not a UNIX file
 ]=]
 function ZipEntry.unixMode(self: ZipEntry): UnixMode?
 	if self.versionMadeBy.os ~= "UNIX" then
@@ -365,22 +365,22 @@ function ZipEntry.unixMode(self: ZipEntry): UnixMode?
 end
 
 --[=[
-    @class ZipReader
+	@class ZipReader
 
-    The main class which represents a decoded state of a ZIP file, holding references
-    to its entries. This is the primary point of interaction with the ZIP file's contents.
+	The main class which represents a decoded state of a ZIP file, holding references
+	to its entries. This is the primary point of interaction with the ZIP file's contents.
 ]=]
 local ZipReader = {}
 
 --[=[
-    @interface ZipReader
-    @within ZipReader
+	@interface ZipReader
+	@within ZipReader
 
-    @field data buffer -- The buffer containing the raw bytes of the ZIP
-    @field comment string -- Comment associated with the ZIP
-    @field entries { ZipEntry } -- The decoded entries present
-    @field directories { [string]: ZipEntry } -- The directories and their respective entries
-    @field root ZipEntry -- The entry of the root directory
+	@field data buffer -- The buffer containing the raw bytes of the ZIP
+	@field comment string -- Comment associated with the ZIP
+	@field entries { ZipEntry } -- The decoded entries present
+	@field directories { [string]: ZipEntry } -- The directories and their respective entries
+	@field root ZipEntry -- The entry of the root directory
 ]=]
 export type ZipReader = typeof(setmetatable({} :: ZipReaderInner, { __index = ZipReader }))
 type ZipReaderInner = {
@@ -392,15 +392,15 @@ type ZipReaderInner = {
 }
 
 --[=[
-    @within ZipReader
-    @function new
+	@within ZipReader
+	@function new
 
-    Creates a new ZipReader instance from the raw bytes of a ZIP file.
-    
-    **Errors if the ZIP file is invalid.**
+	Creates a new ZipReader instance from the raw bytes of a ZIP file.
+	
+	**Errors if the ZIP file is invalid.**
 
-    @param data buffer -- The buffer containing the raw bytes of the ZIP
-    @return ZipReader -- The new ZipReader instance
+	@param data buffer -- The buffer containing the raw bytes of the ZIP
+	@return ZipReader -- The new ZipReader instance
 ]=]
 function ZipReader.new(data): ZipReader
 	local root = ZipEntry.new(0, "/", EMPTY_PROPERTIES)
@@ -443,7 +443,7 @@ end
 
 	[async_zip]: https://github.com/Majored/rs-async-zip/blob/527bda9/src/base/read/io/locator.rs#L37-L45
 
-    @error "Could not find End of Central Directory signature"
+	@error "Could not find End of Central Directory signature"
 
 	@return number -- The offset to the End of Central Directory (including the signature)
 ]=]
@@ -475,11 +475,11 @@ function ZipReader.findEocdPosition(self: ZipReader): number
 end
 
 --[=[
-    @within ZipReader
-    @interface EocdRecord
-    @private
+	@within ZipReader
+	@interface EocdRecord
+	@private
 
-    A parsed End of Central Directory record.
+	A parsed End of Central Directory record.
 
 	@field diskNumber number -- The disk number
 	@field diskWithCD number -- The disk number of the disk with the Central Directory
@@ -500,15 +500,15 @@ export type EocdRecord = {
 }
 
 --[=[
-    @within ZipReader
-    @method parseEocdRecord
-    @private
+	@within ZipReader
+	@method parseEocdRecord
+	@private
 
-    Parses the End of Central Directory record at the given position, usually located
+	Parses the End of Central Directory record at the given position, usually located
 	using the [ZipReader:findEocdPosition].
 
-    **Errors if the ZIP file is invalid.**
-    
+	**Errors if the ZIP file is invalid.**
+	
 	@error "Invalid Central Directory offset or size"
 
 	@param pos number -- The offset to the End of Central Directory record
@@ -550,17 +550,17 @@ function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 end
 
 --[=[
-    @within ZipReader
-    @method parseCentralDirectory
-    @private
+	@within ZipReader
+	@method parseCentralDirectory
+	@private
 
-    Parses the central directory of the ZIP file and populates the `entries` and `directories` 
-    fields. Used internally during initialization of the [ZipReader].
+	Parses the central directory of the ZIP file and populates the `entries` and `directories` 
+	fields. Used internally during initialization of the [ZipReader].
 
-    **Errors if the ZIP file is invalid.**
-    
-    @error "Invalid Central Directory entry signature"
-    @error "Found different entries than specified in Central Directory"
+	**Errors if the ZIP file is invalid.**
+	
+	@error "Invalid Central Directory entry signature"
+	@error "Found different entries than specified in Central Directory"
 ]=]
 function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	local eocdPos = self:findEocdPosition()
@@ -634,12 +634,12 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 end
 
 --[=[
-    @within ZipReader
-    @method buildDirectoryTree
-    @private
+	@within ZipReader
+	@method buildDirectoryTree
+	@private
 
-    Builds the directory tree from the entries. Used internally during initialization of the 
-    [ZipReader].
+	Builds the directory tree from the entries. Used internally during initialization of the 
+	[ZipReader].
 ]=]
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
 	-- Sort entries to process directories first; I could either handle
@@ -711,13 +711,13 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 end
 
 --[=[
-    @within ZipReader
-    @method findEntry
-    
-    Finds a [ZipEntry] by its path in the ZIP archive.
+	@within ZipReader
+	@method findEntry
+	
+	Finds a [ZipEntry] by its path in the ZIP archive.
 
-    @param path string -- Path to the entry to find
-    @return ZipEntry? -- The found entry, or `nil` if not found
+	@param path string -- Path to the entry to find
+	@return ZipEntry? -- The found entry, or `nil` if not found
 ]=]
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
 	if path == "/" then
@@ -745,17 +745,17 @@ function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
 end
 
 --[=[
-    @interface ExtractionOptions
-    @within ZipReader
-    @ignore
+	@interface ExtractionOptions
+	@within ZipReader
+	@ignore
 
-    Options accepted by the [ZipReader:extract] method.
+	Options accepted by the [ZipReader:extract] method.
 
-    @field followSymlinks boolean? -- Whether to follow symlinks
-    @field decompress boolean -- Whether to decompress the entry or only return the raw data
-    @field type ("binary" | "text")? -- The type of data to return, automatically inferred based on the type of contents if not specified
-    @field skipCrcValidation boolean? -- Whether to skip CRC validation
-    @field skipSizeValidation boolean? -- Whether to skip size validation
+	@field followSymlinks boolean? -- Whether to follow symlinks
+	@field decompress boolean -- Whether to decompress the entry or only return the raw data
+	@field type ("binary" | "text")? -- The type of data to return, automatically inferred based on the type of contents if not specified
+	@field skipCrcValidation boolean? -- Whether to skip CRC validation
+	@field skipSizeValidation boolean? -- Whether to skip size validation
 ]=]
 type ExtractionOptions = {
 	followSymlinks: boolean?,
@@ -766,21 +766,21 @@ type ExtractionOptions = {
 }
 
 --[=[
-    @within ZipReader
-    @method extract
+	@within ZipReader
+	@method extract
 
-    Extracts the specified [ZipEntry] from the ZIP archive. See [ZipReader:extractDirectory] for 
-    extracting directories.
+	Extracts the specified [ZipEntry] from the ZIP archive. See [ZipReader:extractDirectory] for 
+	extracting directories.
 
-    @error "Cannot extract directory" -- If the entry is a directory, use [ZipReader:extractDirectory] instead
-    @error "Invalid local file header" -- Invalid ZIP file, local header signature did not match
-    @error "Unsupported PKZip spec version: {versionNeeded}" -- The ZIP file was created with an unsupported version of the ZIP specification
-    @error "Symlink path not found" -- If `followSymlinks` of options is `true` and the symlink path was not found
-    @error "Unsupported compression, ID: {compressionMethod}" -- The entry was compressed using an unsupported compression method
+	@error "Cannot extract directory" -- If the entry is a directory, use [ZipReader:extractDirectory] instead
+	@error "Invalid local file header" -- Invalid ZIP file, local header signature did not match
+	@error "Unsupported PKZip spec version: {versionNeeded}" -- The ZIP file was created with an unsupported version of the ZIP specification
+	@error "Symlink path not found" -- If `followSymlinks` of options is `true` and the symlink path was not found
+	@error "Unsupported compression, ID: {compressionMethod}" -- The entry was compressed using an unsupported compression method
 
-    @param entry ZipEntry -- The entry to extract
-    @param options ExtractionOptions? -- Options for the extraction
-    @return buffer | string -- The extracted data
+	@param entry ZipEntry -- The entry to extract
+	@param options ExtractionOptions? -- Options for the extraction
+	@return buffer | string -- The extracted data
 ]=]
 function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: ExtractionOptions?): buffer | string
 	-- Local File Header format:
@@ -928,16 +928,16 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 end
 
 --[=[
-    @within ZipReader
-    @method extractDirectory
+	@within ZipReader
+	@method extractDirectory
 
-    Extracts all the files in a specified directory, skipping any directory entries.
+	Extracts all the files in a specified directory, skipping any directory entries.
 
-    **Errors if [ZipReader:extract] errors on an entry in the directory.**
+	**Errors if [ZipReader:extract] errors on an entry in the directory.**
 
-    @param path string -- The path to the directory to extract
-    @param options ExtractionOptions? -- Options for the extraction
-    @return { [string]: buffer } | { [string]: string } -- A map of extracted file paths and their contents
+	@param path string -- The path to the directory to extract
+	@param options ExtractionOptions? -- Options for the extraction
+	@return { [string]: buffer } | { [string]: string } -- A map of extracted file paths and their contents
 ]=]
 function ZipReader.extractDirectory(
 	self: ZipReader,
@@ -962,15 +962,15 @@ function ZipReader.extractDirectory(
 end
 
 --[=[
-    @within ZipReader
-    @method listDirectory
+	@within ZipReader
+	@method listDirectory
 
-    Lists the entries within a specified directory path.
+	Lists the entries within a specified directory path.
 
-    @error "Not a directory" -- If the path does not exist or is not a directory
+	@error "Not a directory" -- If the path does not exist or is not a directory
 
-    @param path string -- The path to the directory to list
-    @return { ZipEntry } -- The list of entries in the directory
+	@param path string -- The path to the directory to list
+	@return { ZipEntry } -- The list of entries in the directory
 ]=]
 function ZipReader.listDirectory(self: ZipReader, path: string): { ZipEntry }
 	-- Locate the entry with the path
@@ -985,13 +985,13 @@ function ZipReader.listDirectory(self: ZipReader, path: string): { ZipEntry }
 end
 
 --[=[
-    @within ZipReader
-    @method walk
+	@within ZipReader
+	@method walk
 
-    Recursively walks through the ZIP file, calling the provided callback for each entry
-    with the current entry and its depth.
+	Recursively walks through the ZIP file, calling the provided callback for each entry
+	with the current entry and its depth.
 
-    @param callback (entry: ZipEntry, depth: number) -> () -- The function to call for each entry
+	@param callback (entry: ZipEntry, depth: number) -> () -- The function to call for each entry
 ]=]
 function ZipReader.walk(self: ZipReader, callback: (entry: ZipEntry, depth: number) -> ()): ()
 	-- Wrapper function which recursively calls callback for every child
@@ -1009,22 +1009,22 @@ function ZipReader.walk(self: ZipReader, callback: (entry: ZipEntry, depth: numb
 end
 
 --[=[
-    @interface ZipStatistics
-    @within ZipReader
+	@interface ZipStatistics
+	@within ZipReader
 
-    @field fileCount number -- The number of files in the ZIP 
-    @field dirCount number -- The number of directories in the ZIP 
-    @field totalSize number -- The total size of all files in the ZIP 
+	@field fileCount number -- The number of files in the ZIP 
+	@field dirCount number -- The number of directories in the ZIP 
+	@field totalSize number -- The total size of all files in the ZIP 
 ]=]
 export type ZipStatistics = { fileCount: number, dirCount: number, totalSize: number }
 
 --[=[
-    @within ZipReader
-    @method getStats
+	@within ZipReader
+	@method getStats
 
-    Retrieves statistics about the ZIP file.
+	Retrieves statistics about the ZIP file.
 
-    @return ZipStatistics -- The statistics about the ZIP file
+	@return ZipStatistics -- The statistics about the ZIP file
 ]=]
 function ZipReader.getStats(self: ZipReader): ZipStatistics
 	local stats: ZipStatistics = {
