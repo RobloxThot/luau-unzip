@@ -213,6 +213,52 @@ ZipReader.new(
 ```
 
 [ZipReader.new]: #new
+#### `findEocdPosition`
+> [!IMPORTANT]
+> This is a private API. It may be exported publicly, but try to avoid
+> using this API, since it can have breaking changes at any time without
+> warning.
+
+Finds the position of the End of Central Directory (EoCD) signature in the ZIP file. This
+implementation is inspired by that of [async_zip], a Rust library for parsing ZIP files
+asynchronously.
+
+This method involves buffered reading in reverse and reverse linear searching along those buffers 
+for the EoCD signature. As a result of the buffered approach, we reduce individual reads when compared 
+to reading every single byte sequentially, by a factor of the buffer size (4 KB by default). The buffer
+size of 4 KB was arrived at because it aligns with many systems' page sizes, and also provides a
+good balance between read efficiency (not too small), memory usage (not too large) and CPU cache
+performance.
+
+From my primitive benchmarks, this method is ~1.5x faster than the sequential approach.
+
+**Errors if the ZIP file is invalid.**
+
+[async_zip]: https://github.com/Majored/rs-async-zip/blob/527bda9/src/base/read/io/locator.rs#L37-L45
+```luau
+ZipReader:findEocdPosition(): number
+
+```
+
+[ZipReader:findEocdPosition]: #findEocdPosition
+#### `parseEocdRecord`
+> [!IMPORTANT]
+> This is a private API. It may be exported publicly, but try to avoid
+> using this API, since it can have breaking changes at any time without
+> warning.
+
+Parses the End of Central Directory record at the given position, usually located
+using the [ZipReader:findEocdPosition].
+
+**Errors if the ZIP file is invalid.**
+```luau
+ZipReader:parseEocdRecord(
+	pos: number, -- The offset to the End of Central Directory record
+): EocdRecord
+
+```
+
+[ZipReader:parseEocdRecord]: #parseEocdRecord
 #### `parseCentralDirectory`
 > [!IMPORTANT]
 > This is a private API. It may be exported publicly, but try to avoid
@@ -306,6 +352,33 @@ ZipReader:getStats(): ZipStatistics
 [ZipReader:getStats]: #getStats
 
 ### Types
+#### `EocdRecord`
+> [!IMPORTANT]
+> This is a private type. It may be exported publicly, but try to avoid
+> using it, since its definition can have a breaking change at any time
+> without warning.
+
+A parsed End of Central Directory record.
+```luau
+export type EocdRecord = {
+	diskNumber: number,
+	diskWithCD: number,
+	cdEntries: number,
+	totalCDEntries: number,
+	cdSize: number,
+	cdOffset: number,
+	comment: string,
+}
+```
+- **diskNumber** - The disk number
+- **diskWithCD** - The disk number of the disk with the Central Directory
+- **cdEntries** - The number of entries in the Central Directory
+- **totalCDEntries** - The total number of entries in the Central Directory
+- **cdSize** - The size of the Central Directory
+- **cdOffset** - The offset of the Central Directory
+- **comment** - The comment associated with the ZIP
+
+[EocdRecord]: #EocdRecord
 #### `ZipStatistics`
 
 ```luau
