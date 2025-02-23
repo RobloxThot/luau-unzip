@@ -76,4 +76,4 @@ for _, test in discoverTests("tests") do
 end
 
 reporter.init()
-process.exit(tonumber(frktest.run()))
+process.exit(tonumber(frktest.run())) -- FIXME: frktest.run() returns nil
