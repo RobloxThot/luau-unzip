@@ -538,7 +538,6 @@ function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 	end
 
 	local commentLength = buffer.readu16(self.data, pos + 20)
-	print("comment len:", commentLength)
 	return {
 		diskNumber = buffer.readu16(self.data, pos + 4),
 		diskWithCD = buffer.readu16(self.data, pos + 6),
