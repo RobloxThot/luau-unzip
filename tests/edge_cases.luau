@@ -74,9 +74,10 @@ return function(test: typeof(frktest.test))
 			local unzipResult = process.spawn("unzip", { "-z", "tests/data/max_comment_size.zip" })
 			assert(unzipResult.ok)
 
-			print(#unzipResult.stdout, #zip.comment)
+			local commentData = assert(string.match(unzipResult.stdout, "\n(.*)\n"))
+			
 			-- Check that the comment is the same as the one in the ZIP file (only compare hashes)
-			check.equal(serde.hash("blake3", unzipResult.stdout), serde.hash("blake3", zip.comment))
+			check.equal(serde.hash("blake3", commentData), serde.hash("blake3", zip.comment))
 		end)
 	end)
 end
