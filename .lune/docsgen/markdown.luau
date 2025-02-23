@@ -4,7 +4,7 @@ local moonwave = require("./moonwave")
 local logger = require("./log")
 
 local function writeSectionHeader(buf: string, title: string)
-	buf ..= `## {title}\n`
+	buf ..= `### {title}\n`
 	return buf
 end
 
@@ -14,7 +14,7 @@ local function writeRef(buf: string, name: string, fragment: string?)
 end
 
 local function writeClass(buf: string, name: string, desc: string)
-	buf ..= `# \`{name}\`\n`
+	buf ..= `## \`{name}\`\n`
 	buf ..= desc
 	buf ..= `\n\n`
 	return buf
@@ -49,7 +49,7 @@ local function writeFunction(
 )
 	local sep = if type == "method" then ":" else "."
 	local declaredSignature = `{class}{sep}{name}`
-	buf ..= `### \`{name}\`\n`
+	buf ..= `#### \`{name}\`\n`
 
 	if private then
 		buf ..= `> [!IMPORTANT]\n`
@@ -148,7 +148,7 @@ local function writeMarkdown(path: string, items: { moonwave.Item })
 				continue
 			end
 
-			buf ..= `### \`{type.name}\`\n`
+			buf ..= `#### \`{type.name}\`\n`
 			if type.private then
 				buf ..= `> [!IMPORTANT]\n`
 				buf ..= `> This is a private type. It may be exported publicly, but try to avoid\n`
