@@ -422,42 +422,99 @@ function ZipReader.new(data): ZipReader
 end
 
 --[=[
-    @within ZipReader
-    @method parseCentralDirectory
-    @private
+	@within ZipReader
+	@method findEocdPosition
+	@private
 
-    Parses the central directory of the ZIP file and populates the `entries` and `directories` 
-    fields. Used internally during initialization of the [ZipReader].
+	Finds the position of the End of Central Directory (EoCD) signature in the ZIP file. This
+	implementation is inspired by that of [async_zip], a Rust library for parsing ZIP files
+	asynchronously.
 
-    **Errors if the ZIP file is invalid.**
-    
+	This method involves buffered reading in reverse and reverse linear searching along those buffers 
+	for the EoCD signature. As a result of the buffered approach, we reduce individual reads when compared 
+	to reading every single byte sequentially, by a factor of the buffer size (4 KB by default). The buffer
+	size of 4 KB was arrived at because it aligns with many systems' page sizes, and also provides a
+	good balance between read efficiency (not too small), memory usage (not too large) and CPU cache
+	performance.
+
+	From my primitive benchmarks, this method is ~1.5x faster than the sequential approach.
+
+	**Errors if the ZIP file is invalid.**
+
+	[async_zip]: https://github.com/Majored/rs-async-zip/blob/527bda9/src/base/read/io/locator.rs#L37-L45
+
     @error "Could not find End of Central Directory signature"
-    @error "Invalid Central Directory offset or size"
-    @error "Invalid Central Directory entry signature"
-    @error "Found different entries than specified in Central Directory"
+
+	@return number -- The offset to the End of Central Directory (including the signature)
 ]=]
-function ZipReader.parseCentralDirectory(self: ZipReader): ()
-	-- ZIP files are read from the end, starting with the End of Central Directory record
-	-- The EoCD is at least 22 bytes and contains pointers to the rest of the ZIP structure
+function ZipReader.findEocdPosition(self: ZipReader): number
+	local BUFFER_SIZE = 4096
+	local SIGNATURE_LENGTH = 4
 	local bufSize = buffer.len(self.data)
 
 	-- Start from the minimum possible position of EoCD (22 bytes from end)
-	local minPos = math.max(0, bufSize - (22 + 65535) --[[ max comment size: 64 KiB ]])
-	local pos = bufSize - 22
+	local position = math.max(0, bufSize - (22 + 65535) --[[ max comment size: 64 KiB ]])
+	local searchBuf = buffer.create(BUFFER_SIZE)
 
-	-- Search backwards for the EoCD signature
-	while pos >= minPos do
-		if buffer.readu32(self.data, pos) == SIGNATURES.END_OF_CENTRAL_DIR then
-			break
+	while position < bufSize do
+		local readSize = math.min(BUFFER_SIZE, bufSize - position)
+		buffer.copy(searchBuf, 0, self.data, position, readSize)
+
+		-- Search backwards through buffer for signature
+		for i = readSize - 1, SIGNATURE_LENGTH - 1, -1 do
+			if buffer.readu32(searchBuf, i - SIGNATURE_LENGTH + 1) == SIGNATURES.END_OF_CENTRAL_DIR then
+				return position + i - SIGNATURE_LENGTH + 1
+			end
 		end
-		pos -= 1
+
+		-- Move position backward with overlap for cross-boundary signatures
+		position += BUFFER_SIZE - SIGNATURE_LENGTH
 	end
 
-	-- Verify we found the signature
-	if pos < minPos then
-		error("Could not find End of Central Directory signature")
-	end
+	error("Could not find End of Central Directory signature")
+end
 
+--[=[
+    @within ZipReader
+    @interface EocdRecord
+    @private
+
+    A parsed End of Central Directory record.
+
+	@field diskNumber number -- The disk number
+	@field diskWithCD number -- The disk number of the disk with the Central Directory
+	@field cdEntries number -- The number of entries in the Central Directory
+	@field totalCDEntries number -- The total number of entries in the Central Directory
+	@field cdSize number -- The size of the Central Directory
+	@field cdOffset number -- The offset of the Central Directory
+	@field comment string -- The comment associated with the ZIP
+]=]
+export type EocdRecord = {
+	diskNumber: number,
+	diskWithCD: number,
+	cdEntries: number,
+	totalCDEntries: number,
+	cdSize: number,
+	cdOffset: number,
+	comment: string,
+}
+
+--[=[
+    @within ZipReader
+    @method parseEocdRecord
+    @private
+
+    Parses the End of Central Directory record at the given position, usually located
+	using the [ZipReader:findEocdPosition].
+
+    **Errors if the ZIP file is invalid.**
+    
+	@error "Invalid Central Directory offset or size"
+
+	@param pos number -- The offset to the End of Central Directory record
+	@return EocdRecord -- Structural representation of the parsed record
+]=]
+function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 	-- End of Central Directory format:
 	-- Offset  Bytes  Description
 	-- 0       4      End of central directory signature
@@ -470,19 +527,49 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	-- 20      2      Comment length (n)
 	-- 22      n      Comment
 
-	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdEntries = buffer.readu16(self.data, pos + 10)
+	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdOffset = buffer.readu32(self.data, pos + 16)
 
-	-- Strict validation of CD boundaries and entry count
+	-- Validate CD boundaries and entry count
+	local bufSize = buffer.len(self.data)
 	if cdOffset >= bufSize or cdOffset + cdSize > bufSize then
 		error("Invalid Central Directory offset or size")
 	end
 
+	local commentLength = buffer.readu16(self.data, pos + 20)
+	return {
+		diskNumber = buffer.readu16(self.data, pos + 4),
+		diskWithCD = buffer.readu16(self.data, pos + 6),
+		cdEntries = cdEntries,
+		totalCDEntries = buffer.readu16(self.data, pos + 8),
+		cdSize = cdSize,
+		cdOffset = cdOffset,
+		comment = buffer.readstring(self.data, pos + 22, commentLength),
+	}
+end
+
+--[=[
+    @within ZipReader
+    @method parseCentralDirectory
+    @private
+
+    Parses the central directory of the ZIP file and populates the `entries` and `directories` 
+    fields. Used internally during initialization of the [ZipReader].
+
+    **Errors if the ZIP file is invalid.**
+    
+    @error "Invalid Central Directory entry signature"
+    @error "Found different entries than specified in Central Directory"
+]=]
+function ZipReader.parseCentralDirectory(self: ZipReader): ()
+	local eocdPos = self:findEocdPosition()
+	local record = self:parseEocdRecord(eocdPos)
+	
 	-- Track actual entries found
 	local entriesFound = 0
-	pos = cdOffset
-	while pos < cdOffset + cdSize do
+	local pos = record.cdOffset
+	while pos < record.cdOffset + record.cdSize do
 		if buffer.readu32(self.data, pos) ~= SIGNATURES.CENTRAL_DIR then
 			error("Invalid Central Directory entry signature")
 		end
@@ -540,12 +627,10 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		entriesFound += 1
 	end
 
-	if entriesFound ~= cdEntries then
+	if entriesFound ~= record.cdEntries then
 		error("Found different entries than specified in Central Directory")
 	end
-
-	local cdCommentLength = buffer.readu16(self.data, pos + 20)
-	self.comment = buffer.readstring(self.data, pos + 22, cdCommentLength)
+	self.comment = record.comment
 end
 
 --[=[
