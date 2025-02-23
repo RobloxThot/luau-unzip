@@ -29,6 +29,6 @@ local function extract(input: string): (number, { moonwave.Item }?)
 end
 
 local code, items = extract("lib/init.luau")
-writeMarkdown("./docs/index.md", items :: { moonwave.Item })
+writeMarkdown("./docs/intro.md", items :: { moonwave.Item })
 
 process.exit(code)

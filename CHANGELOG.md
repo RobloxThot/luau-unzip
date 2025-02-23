@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-## [0.1.2] - 2025-02-23
+## [0.1.3] - 2025-02-23
+This is a hotfix release to fix documentation not being displayed properly on the pesde package page.
+
+### Fixed
+- Markdown doc file not being named correctly (rename docs/index.md->docs/intro.md)
+
+## [0.1.2] - 2025-02-23 [YANKED]
 This update brings documentation and some bug fixes! Your IDE should now display information such as usage and best practices for this library when you hover over any of its exported items. The docs are also available on the web in the markdown format, which can be found on [the pesde package page](https://pesde.dev/packages/0x5eal/unzip/0.1.2/luau/docs/intro).
 
 ### Added 
