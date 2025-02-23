@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ## [0.1.2] - 2025-02-23
+This update brings documentation and some bug fixes! Your IDE should now display information such as usage and best practices for this library when you hover over any of its exported items. The docs are also available on the web in the markdown format, which can be found on [the pesde package page](https://pesde.dev/packages/0x5eal/unzip/0.1.2/luau/docs/intro).
+
 ### Added 
-- Added doc comments powered by [moonwave](https://github.com/evaera/moonwave)
+- Added doc comments powered by [moonwave](https://github.com/evaera/moonwave) ([#2](https://github.com/0x5eal/luau-unzip/pull/2))
 - Added markdown doc generator lune script and configured pesde docs
 ### Fixed
 - Fixed incorrect type signatures for some functions
