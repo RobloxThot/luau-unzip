@@ -115,7 +115,7 @@ jobs:
         run: nix develop -c pesde install --locked
 
       - name: Run tests
-        shell: nix develop -c bash
+        shell: 'nix develop -c {0}'
         run: |
           # HACK: Since the exit code isn't properly reflected due to frktest not returning
           # the correct status on test fails, we have to parse the output and check ourselves
