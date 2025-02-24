@@ -115,9 +115,8 @@ jobs:
         run: nix develop -c pesde install --locked
 
       - name: Run tests
-        shell: 'nix develop -c {0}'
         run: |
           # HACK: Since the exit code isn't properly reflected due to frktest not returning
           # the correct status on test fails, we have to parse the output and check ourselves
-          output="$(lune run tests extract | tee /dev/tty)"
+          output="$(nix develop -c lune run tests extract | tee /dev/tty)"
           tail -n 1 <<< $output | sed 's/\x1b\[[0-9;]*m//g' | grep -q "status: OK"
