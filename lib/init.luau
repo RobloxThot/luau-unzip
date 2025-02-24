@@ -640,7 +640,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	if entriesFound ~= record.cdEntries then
 		error("Found different entries than specified in Central Directory")
 	end
-	
+
 	self.comment = record.comment
 end
 
