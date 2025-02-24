@@ -531,10 +531,16 @@ function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdOffset = buffer.readu32(self.data, pos + 16)
 
-	-- Validate CD boundaries and entry count
+	-- Validate CD boundaries and entry count; Ensure minimum size is at least 30 bytes and
+	-- total size after the local header is not larger than the buffer size
 	local bufSize = buffer.len(self.data)
-	if cdOffset >= bufSize or cdOffset + cdSize > bufSize then
+	if cdOffset >= bufSize or cdOffset < 30 or cdOffset + cdSize > bufSize then
 		error("Invalid Central Directory offset or size")
+	end
+
+	-- Validate CD size range; min = 46 bytes per entry, max = 0xFFFF * 3 + 46 bytes per entry
+	if cdSize < cdEntries * 46 or cdEntries * (0xFFFF * 3 + 46) < cdSize then
+		error("Invalid Central Directory size for claimed number of entries")
 	end
 
 	local commentLength = buffer.readu16(self.data, pos + 20)
@@ -609,6 +615,11 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local offset = buffer.readu32(self.data, pos + 42)
 		local name = buffer.readstring(self.data, pos + 46, nameLength)
 
+		local entrySize = 46 + nameLength + extraLength + commentLength
+		if pos + entrySize > record.cdOffset + record.cdSize then
+			error("Invalid Central Directory entry size")
+		end
+
 		table.insert(
 			self.entries,
 			ZipEntry.new(offset, name, {
@@ -630,6 +641,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	if entriesFound ~= record.cdEntries then
 		error("Found different entries than specified in Central Directory")
 	end
+	
 	self.comment = record.comment
 end
 
