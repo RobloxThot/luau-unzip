@@ -531,10 +531,9 @@ function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdOffset = buffer.readu32(self.data, pos + 16)
 
-	-- Validate CD boundaries and entry count; Ensure minimum size is at least 30 bytes and
-	-- total size after the local header is not larger than the buffer size
+	-- Validate CD boundaries and entry count
 	local bufSize = buffer.len(self.data)
-	if cdOffset >= bufSize or cdOffset < 30 or cdOffset + cdSize > bufSize then
+	if cdOffset >= bufSize or cdOffset + cdSize > bufSize then
 		error("Invalid Central Directory offset or size")
 	end
 

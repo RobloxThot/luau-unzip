@@ -10,7 +10,7 @@ local ZipReader = require("../lib")
 local ZIPS = fs.readDir("tests/data")
 local FALLIBLES = {
 	"invalid_cde_number_of_files_allocation_greater_offset.zip",
-	"invalid_cde_number_of_files_allocation_smaller_offset.zip",
+	-- "invalid_cde_number_of_files_allocation_smaller_offset.zip", -- Tested separately in edge cases
 	"invalid_offset.zip",
 	"invalid_offset2.zip",
 	"chinese.zip", -- Contains non local specific encoding which can't be parsed without OS APIs

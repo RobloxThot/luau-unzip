@@ -79,5 +79,12 @@ return function(test: typeof(frktest.test))
 			-- Check that the comment is the same as the one in the ZIP file (only compare hashes)
 			check.equal(serde.hash("blake3", commentData), serde.hash("blake3", zip.comment))
 		end)
+
+		test.case("Does not over alllocate based on declared entry count in EoCD", function()
+			local data = fs.readFile("tests/data/invalid_cde_number_of_files_allocation_smaller_offset.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			check.is_true(#zip.entries == 0)
+		end)
 	end)
 end
