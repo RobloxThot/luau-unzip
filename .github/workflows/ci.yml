@@ -118,5 +118,5 @@ jobs:
         run: |
           # HACK: Since the exit code isn't properly reflected due to frktest not returning
           # the correct status on test fails, we have to parse the output and check ourselves
-          output="$(nix develop -c lune run tests extract | tee /dev/stderr)"
+          output="$(nix develop -c lune run tests | tee /dev/stderr)"
           tail -n 1 <<< $output | sed 's/\x1b\[[0-9;]*m//g' | grep -q "status: OK"
