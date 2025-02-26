@@ -129,7 +129,7 @@ pkgs.mkShell {
       name = "JohnnyMorganz/StyLua";
       exeName = "stylua";
       artifactName = "stylua-linux-x86_64.zip";
-      sha256 = "nzMJELcyczbCkbWPEAhIqESd90CseTYJs19+KA09OiI=";
+      sha256 = "kqse5GN7Vtv8uhsybN5h21wjfEXsMK5jTePn/D3eIrY=";
     })
   ];
 
