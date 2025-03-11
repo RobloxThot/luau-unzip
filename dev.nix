@@ -123,7 +123,7 @@ pkgs.mkShell {
       exeName = "luau-lsp";
       pesdePackage = "pesde/luau_lsp";
       artifactName = "luau-lsp-linux.zip";
-      sha256 = "HJH6VmdsLGpQsk9ABVpOzEv6zF0qeSFJ6UX0ReCxp0E=";
+      sha256 = "kqse5GN7Vtv8uhsybN5h21wjfEXsMK5jTePn/D3eIrY=";
     })
     (fromPesdeManifest {
       name = "JohnnyMorganz/StyLua";
