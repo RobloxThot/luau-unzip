@@ -629,7 +629,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
 				timestamp = timestamp,
 				attributes = externalAttrs,
-				isText = bit32.band(internalAttrs, 0x0001) ~= 0,
+				isText = bit32.btest(internalAttrs, 0x0001),
 			})
 		)
 
@@ -849,7 +849,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 	pos = pos + 30 + nameLength + extraLength
 
-	if bit32.band(bitflags, 0x08) ~= 0 then
+	if bit32.btest(bitflags, 0x08) then
 		-- The bit at offset 3 was set, meaning we did not have the file sizes
 		-- and CRC checksum at the time of the creation of the ZIP. Instead, they
 		-- were appended after the compressed data chunks in a data descriptor
