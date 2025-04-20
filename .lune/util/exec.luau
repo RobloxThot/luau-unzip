@@ -5,10 +5,7 @@ local stdio = require("@lune/stdio")
 
 local CommandBuilder = {}
 
-export type CommandBuilder = typeof(setmetatable(
-	{} :: CommandBuilderFields,
-	{ __index = CommandBuilder }
-))
+export type CommandBuilder = typeof(setmetatable({} :: CommandBuilderFields, { __index = CommandBuilder }))
 type CommandBuilderFields = {
 	program: string,
 	args: { string },
@@ -37,18 +34,12 @@ function CommandBuilder.new(program: string)
 	)
 end
 
-function CommandBuilder.withArg(
-	self: CommandBuilder,
-	arg: string
-): CommandBuilder
+function CommandBuilder.withArg(self: CommandBuilder, arg: string): CommandBuilder
 	table.insert(self.args, arg)
 	return self
 end
 
-function CommandBuilder.withArgs(
-	self: CommandBuilder,
-	args: { string }
-): CommandBuilder
+function CommandBuilder.withArgs(self: CommandBuilder, args: { string }): CommandBuilder
 	for _, arg in args do
 		self:withArg(arg)
 	end
@@ -69,9 +60,7 @@ function CommandBuilder.withStdioStrategy(
 	return self
 end
 
-local function intoSpawnOptionsStdioKind(
-	strategy: StdioStrategy
-): process.SpawnOptionsStdioKind
+local function intoSpawnOptionsStdioKind(strategy: StdioStrategy): process.SpawnOptionsStdioKind
 	if strategy == "pipe" then
 		return "default"
 	end
@@ -88,11 +77,7 @@ local function intoSpawnOptionsStdioKind(
 end
 
 function CommandBuilder.exec(self: CommandBuilder): process.SpawnResult
-	print(
-		"$",
-		stdio.style("dim") .. self.program,
-		table.concat(self.args, " ") .. stdio.style("reset")
-	)
+	print("$", stdio.style("dim") .. self.program, table.concat(self.args, " ") .. stdio.style("reset"))
 
 	local function translateIoStrategyMappings(mappings: IoStrategyMapping)
 		local translatedMappings: process.SpawnOptionsStdio = {}
@@ -105,16 +90,11 @@ function CommandBuilder.exec(self: CommandBuilder): process.SpawnResult
 
 	local child = process.spawn(self.program, self.args, {
 		shell = true,
-		stdio = translateIoStrategyMappings(
-			self.stdioStrategy or DEFAULT_STDIO_STRATEGY
-		),
+		stdio = translateIoStrategyMappings(self.stdioStrategy or DEFAULT_STDIO_STRATEGY),
 	})
 
 	if not child.ok then
-		print(
-			`\n{stdio.color("red")}[luau-lsp]{stdio.color("reset")} Exited with code`,
-			child.code
-		)
+		print(`\n{stdio.color("red")}[luau-lsp]{stdio.color("reset")} Exited with code`, child.code)
 	end
 
 	return child

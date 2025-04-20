@@ -1,5 +1,5 @@
 name = "0x5eal/unzip"
-version = "0.1.0"
+version = "0.1.3"
 description = "Unzip implementation in pure Luau"
 authors = ["Erica Marigold <hi@devcomp.xyz>"]
 repository = "https://github.com/0x5eal/luau-unzip"
@@ -10,7 +10,12 @@ includes = [
 	"pesde.toml",
 	"lib/**/*.luau",
 	"!tests/**/*",
+  "docs/**/*.md"
 ]
+
+[engines]
+pesde = "=0.6.0"
+lune = "=0.8.9"
 
 [scripts]
 tests = ".lune/tests/init.luau"
@@ -26,7 +31,7 @@ lib = "lib/init.luau"
 default = "https://github.com/pesde-pkg/index"
 
 [dev_dependencies]
-stylua = { name = "pesde/stylua", version = "^2.0.2", target = "lune" }
+stylua = { name = "pesde/stylua", version = "=2.0.2", target = "lune" }
 frktest = { name = "itsfrank/frktest", version = "^0.0.2", target = "lune" }
-asciitable = { name = "kimpure/asciitable", version = "^0.1.4" }
-luau-lsp = { name = "pesde/luau_lsp", version = "^1.38.0", target = "lune" }
+asciitable = { name = "kimpure/asciitable", version = "^0.2.1" }
+luau-lsp = { name = "pesde/luau_lsp", version = "=1.39.2", target = "lune" }

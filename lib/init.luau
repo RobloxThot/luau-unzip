@@ -9,7 +9,7 @@ local MAX_SUPPORTED_PKZIP_VERSION = 63
 local SIGNATURES = table.freeze({
 	-- Marks the beginning of each file in the ZIP
 	LOCAL_FILE = 0x04034b50,
-	-- Marks the start of an data descriptor
+	-- Marks the start of a data descriptor
 	DATA_DESCRIPTOR = 0x08074b50,
 	-- Marks entries in the central directory
 	CENTRAL_DIR = 0x02014b50,
@@ -74,35 +74,64 @@ local MADE_BY_OS_LOOKUP: { [number]: MadeByOS } = {
 	[0x13] = "OS/X",
 }
 
+--[=[
+	@class ZipEntry
+	
+	A single entry (a file or a directory) in a ZIP file, and its properties.
+]=]
 local ZipEntry = {}
-export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
--- stylua: ignore
-type ZipEntryInner = {
-	name: string,              -- File path within ZIP, '/' suffix indicates directory
 
-	versionMadeBy: {           -- Version of software and OS that created the ZIP
-		software: string,      -- Software version used to create the ZIP
-		os: MadeByOS,          -- Operating system used to create the ZIP
+--[=[
+	@interface ZipEntry
+	@within ZipEntry
+
+	@field name string -- File path within ZIP, '/' suffix indicates directory
+	@field versionMadeBy { software: string, os: MadeByOS } -- Version of software and OS that created the ZIP
+	@field compressedSize number -- Compressed size in bytes
+	@field size number -- Uncompressed size in bytes
+	@field offset number -- Absolute position of local header in ZIP
+	@field timestamp number -- MS-DOS format timestamp
+	@field method CompressionMethod -- Method used to compress the file
+	@field crc number -- CRC32 checksum of the uncompressed data
+	@field isDirectory boolean -- Whether the entry is a directory or not
+	@field isText boolean -- Whether the entry is plain ASCII text or binary
+	@field attributes number -- File attributes
+	@field parent ZipEntry? -- Parent directory entry, `nil` if entry is root
+	@field children { ZipEntry } -- Children of the entry, if it was a directory, empty array for files
+]=]
+export type ZipEntry = typeof(setmetatable({} :: ZipEntryInner, { __index = ZipEntry }))
+type ZipEntryInner = {
+	name: string,
+
+	versionMadeBy: {
+		software: string,
+		os: MadeByOS,
 	},
 
-	compressedSize: number,    -- Compressed size in bytes
-	size: number,              -- Uncompressed size in bytes
-    offset: number,            -- Absolute position of local header in ZIP
-    timestamp: number,         -- MS-DOS format timestamp
-    method: CompressionMethod, -- Method used to compress the file
-    crc: number,               -- CRC32 checksum of uncompressed data
-    isDirectory: boolean,      -- Whether the entry is a directory or not
-    isText: boolean,           -- Whether the entry is plain ASCII text or binary
-    attributes: number,        -- File attributes
-    parent: ZipEntry?,         -- The parent of the current entry, nil for root
-    children: { ZipEntry },    -- The children of the entry
+	compressedSize: number,
+	size: number,
+	offset: number,
+	timestamp: number,
+	method: CompressionMethod,
+	crc: number,
+	isDirectory: boolean,
+	isText: boolean,
+	attributes: number,
+	parent: ZipEntry?,
+	children: { ZipEntry },
 }
 
 -- stylua: ignore
+--[=[
+	@within ZipEntry	
+	@type MadeByOS "FAT" | "AMIGA" | "VMS" | "UNIX" | "VM/CMS" | "Atari ST" | "OS/2" | "MAC" | "Z-System" | "CP/M" | "NTFS" | "MVS" | "VSE" | "Acorn RISCOS" | "VFAT" | "Alternate MVS" | "BeOS" | "TANDEM" | "OS/400" | "OS/X" | "Unknown"     
+
+	The OS that created the ZIP.
+]=]
 export type MadeByOS =
 	| "FAT"           -- 0x0; MS-DOS and OS/2 (FAT / VFAT / FAT32 file systems)
 	| "AMIGA"         -- 0x1; Amiga
-	| "VMS"	          -- 0x2; OpenVMS
+	| "VMS"           -- 0x2; OpenVMS
 	| "UNIX"          -- 0x3; Unix
 	| "VM/CMS"        -- 0x4; VM/CMS
 	| "Atari ST"      -- 0x5; Atari ST
@@ -121,8 +150,34 @@ export type MadeByOS =
 	| "OS/400"        -- 0x12; OS/400
 	| "OS/X"          -- 0x13; Darwin
 	| "Unknown"       -- 0x14 - 0xff; Unused
+
+--[=[
+	@within ZipEntry
+	@type CompressionMethod "STORE" | "DEFLATE"
+
+	The method used to compress the file:
+	- `STORE` - No compression
+	- `DEFLATE` - Compressed raw deflate chunks
+]=]
 export type CompressionMethod = "STORE" | "DEFLATE"
-export type ZipEntryProperties = {
+
+--[=[
+	@interface ZipEntryProperties
+	@within ZipEntry
+	@private
+
+	A set of properties that describe a ZIP entry. Used internally for construction of 
+	[ZipEntry] objects.
+
+	@field versionMadeBy number -- Version of software and OS that created the ZIP
+	@field compressedSize number -- Compressed size in bytes
+	@field size number -- Uncompressed size in bytes
+	@field attributes number -- File attributes
+	@field timestamp number -- MS-DOS format timestamp
+	@field method CompressionMethod? -- Method used
+	@field crc number -- CRC32 checksum of the uncompressed data
+]=]
+type ZipEntryProperties = {
 	versionMadeBy: number,
 	compressedSize: number,
 	size: number,
@@ -132,6 +187,16 @@ export type ZipEntryProperties = {
 	crc: number,
 }
 
+--[=[
+	@within ZipEntry
+	@function new
+	@private
+
+	@param offset number -- Offset of the entry in the ZIP file
+	@param name string -- File path within ZIP, '/' suffix indicates directory
+	@param properties ZipEntryProperties -- Properties of the entry
+	@return ZipEntry -- The constructed entry
+]=]
 function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperties): ZipEntry
 	local versionMadeByOS = bit32.rshift(properties.versionMadeBy, 8)
 	local versionMadeByVersion = bit32.band(properties.versionMadeBy, 0x00ff)
@@ -158,22 +223,58 @@ function ZipEntry.new(offset: number, name: string, properties: ZipEntryProperti
 	)
 end
 
+--[=[
+	@within ZipEntry
+	@method isSymlink
+
+	Returns whether the entry is a symlink.
+
+	@return boolean
+]=]
 function ZipEntry.isSymlink(self: ZipEntry): boolean
 	return bit32.band(self.attributes, 0xA0000000) == 0xA0000000
 end
 
-function ZipEntry.getPath(self: ZipEntry): string
-	local path = self.name
-	local current = self.parent
+--[=[
+	@within ZipEntry
+	@method getPath
 
-	while current and current.name ~= "/" do
-		path = current.name .. path
-		current = current.parent
+	Resolves the path of the entry based on its relationship with other entries. It is recommended to use this 
+	method instead of accessing the `name` property directly, although they should be equivalent.
+
+	> [!WARNING]
+	> Never use this method when extracting files from the ZIP, since it can contain absolute paths
+	> (say `/etc/passwd`) referencing directories outside the current directory (say `/tmp/extracted`),
+	> causing unintended overwrites of files.
+
+	@return string -- The path of the entry
+]=]
+function ZipEntry.getPath(self: ZipEntry): string
+	if self.name == "/" then
+		return "/"
 	end
 
+	-- Get just the entry name without the path
+	local name = string.match(self.name, "([^/]+)/?$") or self.name
+
+	if not self.parent or self.parent.name == "/" then
+		return self.name
+	end
+
+	-- Combine parent path with entry name
+	local path = string.gsub(self.parent:getPath() .. name, "//+", "/")
 	return path
 end
 
+--[=[
+	@within ZipEntry
+	@method getSafePath
+
+	Resolves the path of the entry based on its relationship with other entries and returns it
+	only if it is safe to use for extraction, otherwise returns `nil`.
+
+	@return string? -- Optional path of the entry if it was safe
+]=]
 function ZipEntry.getSafePath(self: ZipEntry): string?
 	local pathStr = self:getPath()
 
@@ -184,11 +285,30 @@ function ZipEntry.getSafePath(self: ZipEntry): string?
 	return nil
 end
 
+--[=[
+	@within ZipEntry
+	@method sanitizePath
+
+	Sanitizes the path of the entry, potentially losing information, but ensuring the path is
+	safe to use for extraction.
+
+	@return string -- The sanitized path of the entry
+]=]
 function ZipEntry.sanitizePath(self: ZipEntry): string
 	local pathStr = self:getPath()
 	return path.sanitize(pathStr)
 end
 
+--[=[
+	@within ZipEntry
+	@method compressionEfficiency 
+
+	Calculates the compression efficiency of the entry, or `nil` if the entry is a directory.
+
+	Uses the formula: `round((1 - compressedSize / size) * 100)` and outputs a percentage.
+
+	@return number? -- Optional compression efficiency of the entry
+]=]
 function ZipEntry.compressionEfficiency(self: ZipEntry): number?
 	if self.size == 0 or self.compressedSize == 0 then
 		return nil
@@ -198,11 +318,37 @@ function ZipEntry.compressionEfficiency(self: ZipEntry): number?
 	return math.round(ratio * 100)
 end
 
+--[=[
+	@within ZipEntry
+	@method isFile
+
+	Returns whether the entry is a file, i.e., not a directory or symlink.
+
+	@return boolean -- Whether the entry is a file
+]=]
 function ZipEntry.isFile(self: ZipEntry): boolean
 	return not (self.isDirectory and self:isSymlink())
 end
 
+--[=[
+	@within ZipEntry
+	@interface UnixMode
+
+	A object representation of the UNIX mode.
+
+	@field perms string -- The permission octal
+	@field typeFlags string -- The type flags octal
+]=]
 export type UnixMode = { perms: string, typeFlags: string }
+
+--[=[
+	@within ZipEntry
+	@method unixMode
+
+	Parses the entry's attributes to extract a UNIX mode, represented as a [UnixMode].
+
+	@return UnixMode? -- The UNIX mode of the entry, or `nil` if the entry is not a UNIX file
+]=]
 function ZipEntry.unixMode(self: ZipEntry): UnixMode?
 	if self.versionMadeBy.os ~= "UNIX" then
 		return nil
@@ -218,17 +364,44 @@ function ZipEntry.unixMode(self: ZipEntry): UnixMode?
 	}
 end
 
+--[=[
+	@class ZipReader
+
+	The main class which represents a decoded state of a ZIP file, holding references
+	to its entries. This is the primary point of interaction with the ZIP file's contents.
+]=]
 local ZipReader = {}
+
+--[=[
+	@interface ZipReader
+	@within ZipReader
+
+	@field data buffer -- The buffer containing the raw bytes of the ZIP
+	@field comment string -- Comment associated with the ZIP
+	@field entries { ZipEntry } -- The decoded entries present
+	@field directories { [string]: ZipEntry } -- The directories and their respective entries
+	@field root ZipEntry -- The entry of the root directory
+]=]
 export type ZipReader = typeof(setmetatable({} :: ZipReaderInner, { __index = ZipReader }))
--- stylua: ignore
 type ZipReaderInner = {
-    data: buffer,                         -- The buffer containing the raw bytes of the ZIP
-    comment: string,                      -- Comment associated with the ZIP
-    entries: { ZipEntry },                -- The decoded entries present
-    directories: { [string]: ZipEntry },  -- The directories and their respective entries 
-    root: ZipEntry,                       -- The entry of the root directory
+	data: buffer,
+	comment: string,
+	entries: { ZipEntry },
+	directories: { [string]: ZipEntry },
+	root: ZipEntry,
 }
 
+--[=[
+	@within ZipReader
+	@function new
+
+	Creates a new ZipReader instance from the raw bytes of a ZIP file.
+	
+	**Errors if the ZIP file is invalid.**
+
+	@param data buffer -- The buffer containing the raw bytes of the ZIP
+	@return ZipReader -- The new ZipReader instance
+]=]
 function ZipReader.new(data): ZipReader
 	local root = ZipEntry.new(0, "/", EMPTY_PROPERTIES)
 	root.isDirectory = true
@@ -247,28 +420,101 @@ function ZipReader.new(data): ZipReader
 	this:buildDirectoryTree()
 	return this
 end
-function ZipReader.parseCentralDirectory(self: ZipReader): ()
-	-- ZIP files are read from the end, starting with the End of Central Directory record
-	-- The EoCD is at least 22 bytes and contains pointers to the rest of the ZIP structure
+
+--[=[
+	@within ZipReader
+	@method findEocdPosition
+	@private
+
+	Finds the position of the End of Central Directory (EoCD) signature in the ZIP file. This
+	implementation is inspired by that of [async_zip], a Rust library for parsing ZIP files
+	asynchronously.
+
+	This method involves buffered reading in reverse and reverse linear searching along those buffers 
+	for the EoCD signature. As a result of the buffered approach, we reduce individual reads when compared 
+	to reading every single byte sequentially, by a factor of the buffer size (4 KB by default). The buffer
+	size of 4 KB was arrived at because it aligns with many systems' page sizes, and also provides a
+	good balance between read efficiency (not too small), memory usage (not too large) and CPU cache
+	performance.
+
+	From my primitive benchmarks, this method is ~1.5x faster than the sequential approach.
+
+	**Errors if the ZIP file is invalid.**
+
+	[async_zip]: https://github.com/Majored/rs-async-zip/blob/527bda9/src/base/read/io/locator.rs#L37-L45
+
+	@error "Could not find End of Central Directory signature"
+
+	@return number -- The offset to the End of Central Directory (including the signature)
+]=]
+function ZipReader.findEocdPosition(self: ZipReader): number
+	local BUFFER_SIZE = 4096
+	local SIGNATURE_LENGTH = 4
 	local bufSize = buffer.len(self.data)
 
 	-- Start from the minimum possible position of EoCD (22 bytes from end)
-	local minPos = math.max(0, bufSize - (22 + 65535) --[[ max comment size: 64 KiB ]])
-	local pos = bufSize - 22
+	local position = math.max(0, bufSize - (22 + 65536) --[[ max comment size: 64 KB ]])
+	local searchBuf = buffer.create(BUFFER_SIZE)
 
-	-- Search backwards for the EoCD signature
-	while pos >= minPos do
-		if buffer.readu32(self.data, pos) == SIGNATURES.END_OF_CENTRAL_DIR then
-			break
+	while position < bufSize do
+		local readSize = math.min(BUFFER_SIZE, bufSize - position)
+		buffer.copy(searchBuf, 0, self.data, position, readSize)
+
+		-- Search backwards through buffer for signature
+		for i = readSize - 1, SIGNATURE_LENGTH - 1, -1 do
+			if buffer.readu32(searchBuf, i - SIGNATURE_LENGTH + 1) == SIGNATURES.END_OF_CENTRAL_DIR then
+				return position + i - SIGNATURE_LENGTH + 1
+			end
 		end
-		pos -= 1
+
+		-- Move position backward with overlap for cross-boundary signatures
+		position += BUFFER_SIZE - SIGNATURE_LENGTH
 	end
 
-	-- Verify we found the signature
-	if pos < minPos then
-		error("Could not find End of Central Directory signature")
-	end
+	error("Could not find End of Central Directory signature")
+end
 
+--[=[
+	@within ZipReader
+	@interface EocdRecord
+	@private
+
+	A parsed End of Central Directory record.
+
+	@field diskNumber number -- The disk number
+	@field diskWithCD number -- The disk number of the disk with the Central Directory
+	@field cdEntries number -- The number of entries in the Central Directory
+	@field totalCDEntries number -- The total number of entries in the Central Directory
+	@field cdSize number -- The size of the Central Directory
+	@field cdOffset number -- The offset of the Central Directory
+	@field comment string -- The comment associated with the ZIP
+]=]
+export type EocdRecord = {
+	diskNumber: number,
+	diskWithCD: number,
+	cdEntries: number,
+	totalCDEntries: number,
+	cdSize: number,
+	cdOffset: number,
+	comment: string,
+}
+
+--[=[
+	@within ZipReader
+	@method parseEocdRecord
+	@private
+
+	Parses the End of Central Directory record at the given position, usually located
+	using the [ZipReader:findEocdPosition].
+
+	**Errors if the ZIP file is invalid.**
+	
+	@error "Invalid Central Directory offset or size"
+
+	@param pos number -- The offset to the End of Central Directory record
+	@return EocdRecord -- Structural representation of the parsed record
+]=]
+function ZipReader.parseEocdRecord(self: ZipReader, pos: number): EocdRecord
 	-- End of Central Directory format:
 	-- Offset  Bytes  Description
 	-- 0       4      End of central directory signature
@@ -281,19 +527,54 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 	-- 20      2      Comment length (n)
 	-- 22      n      Comment
 
-	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdEntries = buffer.readu16(self.data, pos + 10)
+	local cdSize = buffer.readu32(self.data, pos + 12)
 	local cdOffset = buffer.readu32(self.data, pos + 16)
 
-	-- Strict validation of CD boundaries and entry count
+	-- Validate CD boundaries and entry count
+	local bufSize = buffer.len(self.data)
 	if cdOffset >= bufSize or cdOffset + cdSize > bufSize then
 		error("Invalid Central Directory offset or size")
 	end
 
+	-- Validate CD size range; min = 46 bytes per entry, max = 0xFFFF * 3 + 46 bytes per entry
+	if cdSize < cdEntries * 46 or cdEntries * (0xFFFF * 3 + 46) < cdSize then
+		error("Invalid Central Directory size for claimed number of entries")
+	end
+
+	local commentLength = buffer.readu16(self.data, pos + 20)
+	return {
+		diskNumber = buffer.readu16(self.data, pos + 4),
+		diskWithCD = buffer.readu16(self.data, pos + 6),
+		cdEntries = cdEntries,
+		totalCDEntries = buffer.readu16(self.data, pos + 8),
+		cdSize = cdSize,
+		cdOffset = cdOffset,
+		comment = buffer.readstring(self.data, pos + 22, commentLength),
+	}
+end
+
+--[=[
+	@within ZipReader
+	@method parseCentralDirectory
+	@private
+
+	Parses the central directory of the ZIP file and populates the `entries` and `directories` 
+	fields. Used internally during initialization of the [ZipReader].
+
+	**Errors if the ZIP file is invalid.**
+	
+	@error "Invalid Central Directory entry signature"
+	@error "Found different entries than specified in Central Directory"
+]=]
+function ZipReader.parseCentralDirectory(self: ZipReader): ()
+	local eocdPos = self:findEocdPosition()
+	local record = self:parseEocdRecord(eocdPos)
+
 	-- Track actual entries found
 	local entriesFound = 0
-	pos = cdOffset
-	while pos < cdOffset + cdSize do
+	local pos = record.cdOffset
+	while pos < record.cdOffset + record.cdSize do
 		if buffer.readu32(self.data, pos) ~= SIGNATURES.CENTRAL_DIR then
 			error("Invalid Central Directory entry signature")
 		end
@@ -333,6 +614,11 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		local offset = buffer.readu32(self.data, pos + 42)
 		local name = buffer.readstring(self.data, pos + 46, nameLength)
 
+		local entrySize = 46 + nameLength + extraLength + commentLength
+		if pos + entrySize > record.cdOffset + record.cdSize then
+			error("Invalid Central Directory entry size")
+		end
+
 		table.insert(
 			self.entries,
 			ZipEntry.new(offset, name, {
@@ -343,7 +629,7 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 				method = DECOMPRESSION_ROUTINES[compressionMethod].name :: CompressionMethod,
 				timestamp = timestamp,
 				attributes = externalAttrs,
-				isText = bit32.band(internalAttrs, 0x0001) ~= 0,
+				isText = bit32.btest(internalAttrs, 0x0001),
 			})
 		)
 
@@ -351,14 +637,21 @@ function ZipReader.parseCentralDirectory(self: ZipReader): ()
 		entriesFound += 1
 	end
 
-	if entriesFound ~= cdEntries then
+	if entriesFound ~= record.cdEntries then
 		error("Found different entries than specified in Central Directory")
 	end
 
-	local cdCommentLength = buffer.readu16(self.data, pos + 20)
-	self.comment = buffer.readstring(self.data, pos + 22, cdCommentLength)
+	self.comment = record.comment
 end
 
+--[=[
+	@within ZipReader
+	@method buildDirectoryTree
+	@private
+
+	Builds the directory tree from the entries. Used internally during initialization of the 
+	[ZipReader].
+]=]
 function ZipReader.buildDirectoryTree(self: ZipReader): ()
 	-- Sort entries to process directories first; I could either handle
 	-- directories and files in separate passes over the entries, or sort
@@ -428,6 +721,15 @@ function ZipReader.buildDirectoryTree(self: ZipReader): ()
 	end
 end
 
+--[=[
+	@within ZipReader
+	@method findEntry
+	
+	Finds a [ZipEntry] by its path in the ZIP archive.
+
+	@param path string -- Path to the entry to find
+	@return ZipEntry? -- The found entry, or `nil` if not found
+]=]
 function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
 	if path == "/" then
 		-- If the root directory's entry was requested we do not
@@ -453,6 +755,19 @@ function ZipReader.findEntry(self: ZipReader, path: string): ZipEntry?
 	return self.directories[path]
 end
 
+--[=[
+	@interface ExtractionOptions
+	@within ZipReader
+	@ignore
+
+	Options accepted by the [ZipReader:extract] method.
+
+	@field followSymlinks boolean? -- Whether to follow symlinks
+	@field decompress boolean -- Whether to decompress the entry or only return the raw data
+	@field type ("binary" | "text")? -- The type of data to return, automatically inferred based on the type of contents if not specified
+	@field skipCrcValidation boolean? -- Whether to skip CRC validation
+	@field skipSizeValidation boolean? -- Whether to skip size validation
+]=]
 type ExtractionOptions = {
 	followSymlinks: boolean?,
 	decompress: boolean?,
@@ -460,6 +775,24 @@ type ExtractionOptions = {
 	skipCrcValidation: boolean?,
 	skipSizeValidation: boolean?,
 }
+
+--[=[
+	@within ZipReader
+	@method extract
+
+	Extracts the specified [ZipEntry] from the ZIP archive. See [ZipReader:extractDirectory] for 
+	extracting directories.
+
+	@error "Cannot extract directory" -- If the entry is a directory, use [ZipReader:extractDirectory] instead
+	@error "Invalid local file header" -- Invalid ZIP file, local header signature did not match
+	@error "Unsupported PKZip spec version: {versionNeeded}" -- The ZIP file was created with an unsupported version of the ZIP specification
+	@error "Symlink path not found" -- If `followSymlinks` of options is `true` and the symlink path was not found
+	@error "Unsupported compression, ID: {compressionMethod}" -- The entry was compressed using an unsupported compression method
+
+	@param entry ZipEntry -- The entry to extract
+	@param options ExtractionOptions? -- Options for the extraction
+	@return buffer | string -- The extracted data
+]=]
 function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: ExtractionOptions?): buffer | string
 	-- Local File Header format:
 	-- Offset  Bytes  Description
@@ -516,7 +849,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 	pos = pos + 30 + nameLength + extraLength
 
-	if bit32.band(bitflags, 0x08) ~= 0 then
+	if bit32.btest(bitflags, 0x08) then
 		-- The bit at offset 3 was set, meaning we did not have the file sizes
 		-- and CRC checksum at the time of the creation of the ZIP. Instead, they
 		-- were appended after the compressed data chunks in a data descriptor
@@ -536,7 +869,7 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 
 			if leading == SIGNATURES.DATA_DESCRIPTOR then
 				-- If we find a data descriptor signature, that must mean
-				-- the current offset points is the start of the descriptor
+				-- the current offset points to the start of the descriptor
 				break
 			end
 
@@ -605,10 +938,22 @@ function ZipReader.extract(self: ZipReader, entry: ZipEntry, options: Extraction
 	return if optionsOrDefault.type == "text" then buffer.tostring(content) else content
 end
 
+--[=[
+	@within ZipReader
+	@method extractDirectory
+
+	Extracts all the files in a specified directory, skipping any directory entries.
+
+	**Errors if [ZipReader:extract] errors on an entry in the directory.**
+
+	@param path string -- The path to the directory to extract
+	@param options ExtractionOptions? -- Options for the extraction
+	@return { [string]: buffer } | { [string]: string } -- A map of extracted file paths and their contents
+]=]
 function ZipReader.extractDirectory(
 	self: ZipReader,
 	path: string,
-	options: ExtractionOptions
+	options: ExtractionOptions?
 ): { [string]: buffer } | { [string]: string }
 	local files: { [string]: buffer } | { [string]: string } = {}
 	-- Normalize path by removing leading slash for consistent prefix matching
@@ -627,6 +972,17 @@ function ZipReader.extractDirectory(
 	return files
 end
 
+--[=[
+	@within ZipReader
+	@method listDirectory
+
+	Lists the entries within a specified directory path.
+
+	@error "Not a directory" -- If the path does not exist or is not a directory
+
+	@param path string -- The path to the directory to list
+	@return { ZipEntry } -- The list of entries in the directory
+]=]
 function ZipReader.listDirectory(self: ZipReader, path: string): { ZipEntry }
 	-- Locate the entry with the path
 	local entry = self:findEntry(path)
@@ -639,6 +995,15 @@ function ZipReader.listDirectory(self: ZipReader, path: string): { ZipEntry }
 	return entry.children
 end
 
+--[=[
+	@within ZipReader
+	@method walk
+
+	Recursively walks through the ZIP file, calling the provided callback for each entry
+	with the current entry and its depth.
+
+	@param callback (entry: ZipEntry, depth: number) -> () -- The function to call for each entry
+]=]
 function ZipReader.walk(self: ZipReader, callback: (entry: ZipEntry, depth: number) -> ()): ()
 	-- Wrapper function which recursively calls callback for every child
 	-- in an entry
@@ -654,7 +1019,24 @@ function ZipReader.walk(self: ZipReader, callback: (entry: ZipEntry, depth: numb
 	walkEntry(self.root, 0)
 end
 
+--[=[
+	@interface ZipStatistics
+	@within ZipReader
+
+	@field fileCount number -- The number of files in the ZIP 
+	@field dirCount number -- The number of directories in the ZIP 
+	@field totalSize number -- The total size of all files in the ZIP 
+]=]
 export type ZipStatistics = { fileCount: number, dirCount: number, totalSize: number }
+
+--[=[
+	@within ZipReader
+	@method getStats
+
+	Retrieves statistics about the ZIP file.
+
+	@return ZipStatistics -- The statistics about the ZIP file
+]=]
 function ZipReader.getStats(self: ZipReader): ZipStatistics
 	local stats: ZipStatistics = {
 		fileCount = 0,

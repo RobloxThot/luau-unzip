@@ -10,12 +10,11 @@ local ZipReader = require("../lib")
 local ZIPS = fs.readDir("tests/data")
 local FALLIBLES = {
 	"invalid_cde_number_of_files_allocation_greater_offset.zip",
-	"invalid_cde_number_of_files_allocation_smaller_offset.zip",
+	-- "invalid_cde_number_of_files_allocation_smaller_offset.zip", -- Tested separately in edge cases
 	"invalid_offset.zip",
 	"invalid_offset2.zip",
 	"chinese.zip", -- Contains non local specific encoding which can't be parsed without OS APIs
 	"non_utf8.zip", -- FIXME: Lune breaks for non utf8 data in process stdout
-	"pandoc_soft_links.zip", -- Soft links are tested separately in edge_cases
 }
 
 return function(test: typeof(frktest.test))

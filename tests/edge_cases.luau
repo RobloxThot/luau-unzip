@@ -66,5 +66,25 @@ return function(test: typeof(frktest.test))
 				return zip:extractDirectory("/", { type = "text" })
 			end)
 		end)
+
+		test.case("Efficiently handles ZIP with max length comment", function()
+			local data = fs.readFile("tests/data/max_comment_size.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			local unzipResult = process.spawn("unzip", { "-z", "tests/data/max_comment_size.zip" })
+			assert(unzipResult.ok)
+
+			local commentData = assert(string.match(unzipResult.stdout, "\n(.*)\n"))
+
+			-- Check that the comment is the same as the one in the ZIP file (only compare hashes)
+			check.equal(serde.hash("blake3", commentData), serde.hash("blake3", zip.comment))
+		end)
+
+		test.case("Does not over alllocate based on declared entry count in EoCD", function()
+			local data = fs.readFile("tests/data/invalid_cde_number_of_files_allocation_smaller_offset.zip")
+			local zip = ZipReader.load(buffer.fromstring(data))
+
+			check.is_true(#zip.entries == 0)
+		end)
 	end)
 end
