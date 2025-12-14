@@ -1,8 +1,6 @@
 # luau-unzip
 
-<a href="https://lune-org.github.io/docs"><img alt="Lune" src="https://raw.githubusercontent.com/0x5eal/semver-luau/refs/heads/main/.lune/assets/powered-by-lune.svg" /></a>
-
-A Luau library to unzip and extract files from ZIP archives. The implementation is based on the [PKZip APPNOTE v6.3.9](https://www.pkware.com/documents/APPNOTE/APPNOTE-6.3.9.TXT).
+A Luau library for Roblox exc to unzip and extract files from ZIP archives. Edited from [0x5eal/luau-unzip](https://github.com/0x5eal/luau-unzip) to work in exploits, just look at the useage below. I will not help or update this if broken, just deal with it.
 
 ## Features
 - Extract files from ZIP archives.
